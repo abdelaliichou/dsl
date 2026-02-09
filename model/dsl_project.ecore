@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="dsl_project" nsURI="http://www.example.org/dsl_project" nsPrefix="dsl_project">
+  <eClassifiers xsi:type="ecore:EClass" name="Statement"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Block"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Expression"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Primitive"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Forward"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Backward"/>
+  <eClassifiers xsi:type="ecore:EClass" name="CWturn"/>
+  <eClassifiers xsi:type="ecore:EClass" name="CCWturn"/>
+  <eClassifiers xsi:type="ecore:EClass" name="SlideLeft"/>
+  <eClassifiers xsi:type="ecore:EClass" name="SlideRight"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Unit"/>
+  <eClassifiers xsi:type="ecore:EClass" name="M"/>
+  <eClassifiers xsi:type="ecore:EClass" name="MM"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ControlStructure"/>
+  <eClassifiers xsi:type="ecore:EClass" name="CM"/>
+  <eClassifiers xsi:type="ecore:EClass" name="While"/>
+  <eClassifiers xsi:type="ecore:EClass" name="IfElse"/>
+  <eClassifiers xsi:type="ecore:EClass" name="For"/>
+  <eClassifiers xsi:type="ecore:EClass" name="FunctionDeclaration"/>
+  <eClassifiers xsi:type="ecore:EClass" name="FunctionCall"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Parameter"/>
+  <eClassifiers xsi:type="ecore:EClass" name="ParameterCall"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Constant">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="intergerValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="BinaryExp"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Mul"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Add"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Sub"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Div"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Equals"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Greater"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Lower"/>
+  <eClassifiers xsi:type="ecore:EClass" name="SlideAngle"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Program">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="entry" lowerBound="1" eType="#//FunctionDeclaration"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="functions" upperBound="-1"
+        eType="#//FunctionDeclaration"/>
+  </eClassifiers>
+</ecore:EPackage>
