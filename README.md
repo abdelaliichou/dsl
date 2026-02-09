@@ -337,3 +337,1427 @@ To resolve the problem, install `langium-visitor` in global:
 ```bash
 npm i -g langium-visitor
 ```
+---
+
+# 📚 RoboML Metamodel - Complete Documentation
+
+## 🎯 Overview
+
+RoboML is a Domain-Specific Language (DSL) designed to control a four-wheeled robot with ultrasound sensors. This document describes the complete metamodel (abstract syntax) created using Eclipse Ecore.
+
+---
+
+## 📊 Complete Class Diagram (Mermaid)
+
+```mermaid
+classDiagram
+    %% ============================================
+    %% ROOT CLASS
+    %% ============================================
+    class Program {
+        <<root>>
+    }
+    Program "1" *-- "1" Function : entry
+    Program "1" *-- "0..*" Function : functions
+
+    %% ============================================
+    %% FUNCTION & PARAMETER
+    %% ============================================
+    class Function {
+        +String name
+        +ReturnType returnType
+    }
+    Function "1" *-- "0..*" Parameter : parameters
+    Function "1" *-- "0..*" Statement : body
+
+    class Parameter {
+        +String name
+        +VariableType type
+    }
+
+    %% ============================================
+    %% STATEMENT HIERARCHY
+    %% ============================================
+    class Statement {
+        <<abstract>>
+    }
+
+    class VariableDeclaration {
+        +String name
+        +VariableType type
+    }
+    Statement <|-- VariableDeclaration
+    VariableDeclaration "1" *-- "0..1" Expression : initialValue
+
+    class Assignment {
+        +String variable
+    }
+    Statement <|-- Assignment
+    Assignment "1" *-- "1" Expression : value
+
+    class Loop {
+    }
+    Statement <|-- Loop
+    Loop "1" *-- "1" Expression : condition
+    Loop "1" *-- "0..*" Statement : body
+
+    class Condition {
+    }
+    Statement <|-- Condition
+    Condition "1" *-- "1" Expression : condition
+    Condition "1" *-- "0..*" Statement : thenBlock
+    Condition "1" *-- "0..*" Statement : elseBlock
+
+    %% ============================================
+    %% COMMAND HIERARCHY
+    %% ============================================
+    class Command {
+        <<abstract>>
+    }
+    Statement <|-- Command
+
+    class Movement {
+        +Direction direction
+        +DistanceUnit unit
+    }
+    Command <|-- Movement
+    Movement "1" *-- "1" Expression : distance
+
+    class Rotation {
+        +RotationDirection direction
+    }
+    Command <|-- Rotation
+    Rotation "1" *-- "1" Expression : angle
+
+    class SetSpeed {
+        +SpeedUnit unit
+    }
+    Command <|-- SetSpeed
+    SetSpeed "1" *-- "1" Expression : speed
+
+    class FunctionCall {
+        +String functionName
+    }
+    Command <|-- FunctionCall
+    FunctionCall "1" *-- "0..*" Expression : arguments
+
+    %% ============================================
+    %% EXPRESSION HIERARCHY
+    %% ============================================
+    class Expression {
+        <<abstract>>
+    }
+
+    class NumberLiteral {
+        +double value
+    }
+    Expression <|-- NumberLiteral
+
+    class BooleanLiteral {
+        +boolean value
+    }
+    Expression <|-- BooleanLiteral
+
+    class VariableReference {
+        +String variableName
+    }
+    Expression <|-- VariableReference
+
+    class SensorRead {
+        +SensorType sensor
+        +DistanceUnit unit
+    }
+    Expression <|-- SensorRead
+
+    class UnitExpression {
+        +DistanceUnit unit
+    }
+    Expression <|-- UnitExpression
+    UnitExpression "1" *-- "1" Expression : value
+
+    class BinaryExpression {
+        <<abstract>>
+    }
+    Expression <|-- BinaryExpression
+    BinaryExpression "1" *-- "1" Expression : left
+    BinaryExpression "1" *-- "1" Expression : right
+
+    class ArithmeticExpression {
+        +ArithmeticOperator operator
+    }
+    BinaryExpression <|-- ArithmeticExpression
+
+    class ComparisonExpression {
+        +ComparisonOperator operator
+    }
+    BinaryExpression <|-- ComparisonExpression
+
+    class UnaryExpression {
+        +UnaryOperator operator
+    }
+    Expression <|-- UnaryExpression
+    UnaryExpression "1" *-- "1" Expression : operand
+
+    %% ============================================
+    %% ENUMERATIONS
+    %% ============================================
+    class ReturnType {
+        <<enumeration>>
+        VOID
+        NUMBER
+        BOOLEAN
+    }
+
+    class VariableType {
+        <<enumeration>>
+        NUMBER
+        BOOLEAN
+    }
+
+    class Direction {
+        <<enumeration>>
+        FORWARD
+        BACKWARD
+        LEFT
+        RIGHT
+    }
+
+    class RotationDirection {
+        <<enumeration>>
+        CLOCK
+        COUNTERCLOCK
+    }
+
+    class DistanceUnit {
+        <<enumeration>>
+        CM
+        MM
+    }
+
+    class SpeedUnit {
+        <<enumeration>>
+        MM_PER_SEC
+        CM_PER_SEC
+    }
+
+    class ArithmeticOperator {
+        <<enumeration>>
+        PLUS
+        MINUS
+        MULTIPLY
+        DIVIDE
+        MODULO
+    }
+
+    class ComparisonOperator {
+        <<enumeration>>
+        LESS
+        LESS_EQ
+        GREATER
+        GREATER_EQ
+        EQUALS
+        NOT_EQUALS
+    }
+
+    class UnaryOperator {
+        <<enumeration>>
+        MINUS
+        NOT
+    }
+
+    class SensorType {
+        <<enumeration>>
+        TIMESTAMP
+        DISTANCE
+    }
+```
+
+---
+
+## 🏗️ Architecture Overview
+
+The RoboML metamodel is organized into **5 main hierarchies**:
+
+1. **Program Structure** - Root and function definitions
+2. **Statements** - Executable instructions (loops, conditions, assignments, commands)
+3. **Commands** - Robot-specific actions (movement, rotation, speed control)
+4. **Expressions** - Value computations (arithmetic, comparisons, literals)
+5. **Enumerations** - Type-safe constants (directions, units, operators)
+
+---
+
+## 📋 Detailed Class Documentation
+
+### 1. Program Structure
+
+#### 🔹 Program (Root Class)
+
+**Purpose:** Entry point of a RoboML program. Contains all function definitions.
+
+**Attributes:** None
+
+**References:**
+- `entry: Function [1]` - The main entry function (mandatory)
+- `functions: Function [0..*]` - Additional function definitions
+
+**Design Choice:** We separate `entry` from `functions` to make it explicit that every program must have exactly one entry point.
+
+**Example:**
+```
+Program
+├── entry: Function (name="entry")
+└── functions[0]: Function (name="square")
+```
+
+---
+
+#### 🔹 Function
+
+**Purpose:** Represents a reusable function with parameters and a body of statements.
+
+**Attributes:**
+- `name: String` - Function identifier
+- `returnType: ReturnType` - Return type (VOID, NUMBER, BOOLEAN)
+
+**References:**
+- `parameters: Parameter [0..*]` - Function parameters
+- `body: Statement [0..*]` - Function body (sequence of statements)
+
+**Design Choice:** Functions can have zero or more parameters and statements, allowing both simple procedures and complex logic.
+
+**Example:**
+```java
+Function {
+    name = "moveAndTurn"
+    returnType = VOID
+    parameters = [
+        Parameter { name="distance", type=NUMBER },
+        Parameter { name="angle", type=NUMBER }
+    ]
+    body = [
+        Movement { direction=FORWARD, distance=... },
+        Rotation { direction=CLOCK, angle=... }
+    ]
+}
+```
+
+**Corresponds to:**
+```
+let void moveAndTurn(number distance, number angle) {
+    Forward distance in cm
+    Clock angle
+}
+```
+
+---
+
+#### 🔹 Parameter
+
+**Purpose:** Defines a function parameter.
+
+**Attributes:**
+- `name: String` - Parameter name
+- `type: VariableType` - Parameter type (NUMBER, BOOLEAN)
+
+**Design Choice:** Parameters are strongly typed to enable compile-time type checking.
+
+**Example:**
+```java
+Parameter {
+    name = "speed"
+    type = NUMBER
+}
+```
+
+**Corresponds to:** `number speed` in function signature
+
+---
+
+### 2. Statement Hierarchy
+
+#### 🔹 Statement (Abstract)
+
+**Purpose:** Base class for all executable instructions.
+
+**Why Abstract?** Cannot be instantiated directly. Provides a common type for all statements, enabling polymorphic collections (e.g., `body: Statement [0..*]` in Function).
+
+**Concrete Subclasses:**
+- `VariableDeclaration`
+- `Assignment`
+- `Loop`
+- `Condition`
+- `Command` (and its subclasses)
+
+**Design Choice:** Using an abstract base class allows us to create heterogeneous collections of statements, making it easy to represent a sequence of different instruction types in function bodies or control structures.
+
+---
+
+#### 🔹 VariableDeclaration
+
+**Purpose:** Declares a new variable with optional initialization.
+
+**Attributes:**
+- `name: String` - Variable name
+- `type: VariableType` - Variable type (NUMBER, BOOLEAN)
+
+**References:**
+- `initialValue: Expression [0..1]` - Optional initial value
+
+**Design Choice:** Initial value is optional (`[0..1]`) to support both `var number x` and `var number x = 5`.
+
+**Example:**
+```java
+VariableDeclaration {
+    name = "count"
+    type = NUMBER
+    initialValue = NumberLiteral { value = 0 }
+}
+```
+
+**Corresponds to:** `var number count = 0`
+
+---
+
+#### 🔹 Assignment
+
+**Purpose:** Assigns a new value to an existing variable.
+
+**Attributes:**
+- `variable: String` - Name of the variable to assign
+
+**References:**
+- `value: Expression [1]` - New value (mandatory)
+
+**Design Choice:** We use `String` for variable name rather than a reference to VariableDeclaration. This simplifies the model but requires name resolution during semantic analysis.
+
+**Example:**
+```java
+Assignment {
+    variable = "count"
+    value = ArithmeticExpression {
+        operator = PLUS
+        left = VariableReference { variableName = "count" }
+        right = NumberLiteral { value = 1 }
+    }
+}
+```
+
+**Corresponds to:** `count = count + 1`
+
+---
+
+#### 🔹 Loop
+
+**Purpose:** Repeats a block of statements while a condition is true.
+
+**References:**
+- `condition: Expression [1]` - Loop condition (must evaluate to boolean)
+- `body: Statement [0..*]` - Statements to repeat
+
+**Design Choice:** The condition must always be present (`[1]`), but the body can be empty (`[0..*]`), though an empty loop is useless in practice.
+
+**Example:**
+```java
+Loop {
+    condition = ComparisonExpression {
+        operator = LESS
+        left = VariableReference { variableName = "count" }
+        right = NumberLiteral { value = 5 }
+    }
+    body = [
+        Assignment { variable = "count", value = ... },
+        FunctionCall { functionName = "square" }
+    ]
+}
+```
+
+**Corresponds to:**
+```
+loop count < 5 {
+    count = count + 1
+    square()
+}
+```
+
+---
+
+#### 🔹 Condition
+
+**Purpose:** Conditional execution (if-then-else).
+
+**References:**
+- `condition: Expression [1]` - Condition to evaluate
+- `thenBlock: Statement [0..*]` - Statements if condition is true
+- `elseBlock: Statement [0..*]` - Statements if condition is false (optional)
+
+**Design Choice:** Both blocks are `[0..*]` to support:
+- if with no statements: `if condition { }`
+- if without else: `if condition { ... }`
+- if-else: `if condition { ... } else { ... }`
+
+**Example:**
+```java
+Condition {
+    condition = ComparisonExpression {
+        operator = GREATER
+        left = SensorRead { sensor = DISTANCE, unit = CM }
+        right = NumberLiteral { value = 25 }
+    }
+    thenBlock = [
+        Movement { direction = FORWARD, distance = ... }
+    ]
+    elseBlock = [
+        Rotation { direction = CLOCK, angle = ... }
+    ]
+}
+```
+
+**Corresponds to:**
+```
+if getDistance() in cm > 25 {
+    Forward 10 in cm
+} else {
+    Clock 90
+}
+```
+
+---
+
+### 3. Command Hierarchy
+
+#### 🔹 Command (Abstract)
+
+**Purpose:** Base class for all robot-specific commands.
+
+**Why Abstract?** Groups all robot actions under a common type, making it easier to extend with new commands.
+
+**Extends:** `Statement`
+
+**Concrete Subclasses:**
+- `Movement` - Directional movement
+- `Rotation` - Turning
+- `SetSpeed` - Speed configuration
+- `FunctionCall` - User-defined function invocation
+
+**Design Choice:** Command inherits from Statement, meaning commands can appear anywhere statements are expected (function bodies, loop bodies, condition blocks).
+
+---
+
+#### 🔹 Movement
+
+**Purpose:** Moves the robot in a specific direction.
+
+**Attributes:**
+- `direction: Direction` - FORWARD, BACKWARD, LEFT, RIGHT
+- `unit: DistanceUnit` - CM or MM
+
+**References:**
+- `distance: Expression [1]` - How far to move
+
+**Design Choice:** Direction and unit are attributes (enumerations) for type safety, while distance is an Expression to support both literals (`30`) and variables (`myDistance`).
+
+**Example:**
+```java
+Movement {
+    direction = FORWARD
+    unit = CM
+    distance = UnitExpression {
+        unit = CM
+        value = NumberLiteral { value = 30 }
+    }
+}
+```
+
+**Corresponds to:** `Forward 30 in cm`
+
+---
+
+#### 🔹 Rotation
+
+**Purpose:** Rotates the robot.
+
+**Attributes:**
+- `direction: RotationDirection` - CLOCK (clockwise) or COUNTERCLOCK (counter-clockwise)
+
+**References:**
+- `angle: Expression [1]` - Rotation angle in degrees
+
+**Design Choice:** Angle is always in degrees (no unit attribute needed), simplifying the model.
+
+**Example:**
+```java
+Rotation {
+    direction = CLOCK
+    angle = NumberLiteral { value = 90 }
+}
+```
+
+**Corresponds to:** `Clock 90`
+
+---
+
+#### 🔹 SetSpeed
+
+**Purpose:** Configures the robot's movement speed.
+
+**Attributes:**
+- `unit: SpeedUnit` - MM_PER_SEC or CM_PER_SEC
+
+**References:**
+- `speed: Expression [1]` - Speed value
+
+**Design Choice:** Speed is always "distance per second", so the unit specifies which distance unit is used.
+
+**Example:**
+```java
+SetSpeed {
+    unit = MM_PER_SEC
+    speed = UnitExpression {
+        unit = MM
+        value = NumberLiteral { value = 150 }
+    }
+}
+```
+
+**Corresponds to:** `setSpeed(150 in mm)` // 150mm/s
+
+---
+
+#### 🔹 FunctionCall
+
+**Purpose:** Invokes a user-defined function.
+
+**Attributes:**
+- `functionName: String` - Name of the function to call
+
+**References:**
+- `arguments: Expression [0..*]` - Arguments passed to the function
+
+**Design Choice:** FunctionCall extends Command (not just Expression) because in RoboML, function calls can be statements. For functions that return values, they could also be used as expressions.
+
+**Example:**
+```java
+FunctionCall {
+    functionName = "square"
+    arguments = []
+}
+```
+
+**Corresponds to:** `square()`
+
+**With arguments:**
+```java
+FunctionCall {
+    functionName = "moveAndTurn"
+    arguments = [
+        NumberLiteral { value = 50 },
+        NumberLiteral { value = 90 }
+    ]
+}
+```
+
+**Corresponds to:** `moveAndTurn(50, 90)`
+
+---
+
+### 4. Expression Hierarchy
+
+#### 🔹 Expression (Abstract)
+
+**Purpose:** Base class for all value-producing computations.
+
+**Why Abstract?** Cannot be instantiated directly. Expressions always evaluate to a value (number or boolean).
+
+**Concrete Subclasses:**
+- Literals: `NumberLiteral`, `BooleanLiteral`
+- References: `VariableReference`, `SensorRead`
+- Operations: `ArithmeticExpression`, `ComparisonExpression`, `UnaryExpression`
+- Unit handling: `UnitExpression`
+
+**Design Choice:** Separating Statement and Expression creates a clear distinction between:
+- **Statements**: perform actions (no return value)
+- **Expressions**: compute values (return number or boolean)
+
+This matches imperative programming paradigms and enables type checking.
+
+---
+
+#### 🔹 NumberLiteral
+
+**Purpose:** Represents a numeric constant.
+
+**Attributes:**
+- `value: double` - The numeric value
+
+**Design Choice:** Using `double` (floating-point) instead of `int` allows decimal values like `3.14` or `2.5`.
+
+**Example:**
+```java
+NumberLiteral { value = 42 }
+NumberLiteral { value = 3.14159 }
+```
+
+**Corresponds to:** `42`, `3.14159`
+
+---
+
+#### 🔹 BooleanLiteral
+
+**Purpose:** Represents a boolean constant.
+
+**Attributes:**
+- `value: boolean` - true or false
+
+**Example:**
+```java
+BooleanLiteral { value = true }
+BooleanLiteral { value = false }
+```
+
+**Corresponds to:** `true`, `false`
+
+---
+
+#### 🔹 VariableReference
+
+**Purpose:** References the value of a declared variable.
+
+**Attributes:**
+- `variableName: String` - Name of the variable
+
+**Design Choice:** Uses String name instead of a direct reference to VariableDeclaration. This simplifies the metamodel but requires scope resolution during interpretation/compilation.
+
+**Example:**
+```java
+VariableReference { variableName = "count" }
+```
+
+**Corresponds to:** Using `count` in expressions like `count + 1` or `count < 5`
+
+---
+
+#### 🔹 SensorRead
+
+**Purpose:** Reads a value from a robot sensor.
+
+**Attributes:**
+- `sensor: SensorType` - TIMESTAMP or DISTANCE
+- `unit: DistanceUnit [0..1]` - Optional unit (only for DISTANCE sensor)
+
+**Design Choice:** 
+- TIMESTAMP sensor returns milliseconds (no unit needed)
+- DISTANCE sensor can return CM or MM (unit required)
+
+**Example:**
+```java
+SensorRead {
+    sensor = TIMESTAMP
+    unit = null  // No unit for time
+}
+```
+
+**Corresponds to:** `getTimestamp()`
+
+```java
+SensorRead {
+    sensor = DISTANCE
+    unit = CM
+}
+```
+
+**Corresponds to:** `getDistance() in cm`
+
+---
+
+#### 🔹 UnitExpression
+
+**Purpose:** Associates a unit with a numeric expression.
+
+**Attributes:**
+- `unit: DistanceUnit` - CM or MM
+
+**References:**
+- `value: Expression [1]` - The numeric expression
+
+**Design Choice:** This wrapper pattern allows units to be applied to any expression, not just literals:
+- `30 in cm` → UnitExpression wrapping NumberLiteral
+- `(count * 2) in mm` → UnitExpression wrapping ArithmeticExpression
+
+**Example:**
+```java
+UnitExpression {
+    unit = CM
+    value = NumberLiteral { value = 30 }
+}
+```
+
+**Corresponds to:** `30 in cm`
+
+**Complex example:**
+```java
+UnitExpression {
+    unit = MM
+    value = ArithmeticExpression {
+        operator = MULTIPLY
+        left = VariableReference { variableName = "distance" }
+        right = NumberLiteral { value = 2 }
+    }
+}
+```
+
+**Corresponds to:** `distance * 2 in mm`
+
+---
+
+#### 🔹 BinaryExpression (Abstract)
+
+**Purpose:** Base class for all binary operations (operations with two operands).
+
+**Why Abstract?** Provides common structure (left and right operands) for arithmetic and comparison operations.
+
+**References:**
+- `left: Expression [1]` - Left operand
+- `right: Expression [1]` - Right operand
+
+**Concrete Subclasses:**
+- `ArithmeticExpression` - Mathematical operations
+- `ComparisonExpression` - Comparison operations
+
+**Design Choice:** Factoring out common structure reduces duplication and makes the metamodel more maintainable.
+
+---
+
+#### 🔹 ArithmeticExpression
+
+**Purpose:** Performs arithmetic operations.
+
+**Attributes:**
+- `operator: ArithmeticOperator` - PLUS, MINUS, MULTIPLY, DIVIDE, MODULO
+
+**Inherits:**
+- `left: Expression [1]`
+- `right: Expression [1]`
+
+**Design Choice:** Returns a numeric value, used for mathematical computations.
+
+**Example:**
+```java
+ArithmeticExpression {
+    operator = PLUS
+    left = VariableReference { variableName = "count" }
+    right = NumberLiteral { value = 1 }
+}
+```
+
+**Corresponds to:** `count + 1`
+
+**Complex example:**
+```java
+ArithmeticExpression {
+    operator = MULTIPLY
+    left = ArithmeticExpression {
+        operator = PLUS
+        left = NumberLiteral { value = 5 }
+        right = NumberLiteral { value = 3 }
+    }
+    right = NumberLiteral { value = 2 }
+}
+```
+
+**Corresponds to:** `(5 + 3) * 2`
+
+---
+
+#### 🔹 ComparisonExpression
+
+**Purpose:** Compares two values.
+
+**Attributes:**
+- `operator: ComparisonOperator` - LESS, LESS_EQ, GREATER, GREATER_EQ, EQUALS, NOT_EQUALS
+
+**Inherits:**
+- `left: Expression [1]`
+- `right: Expression [1]`
+
+**Design Choice:** Returns a boolean value, used in conditions (loops, if-statements).
+
+**Example:**
+```java
+ComparisonExpression {
+    operator = LESS
+    left = VariableReference { variableName = "count" }
+    right = NumberLiteral { value = 5 }
+}
+```
+
+**Corresponds to:** `count < 5`
+
+**Example with sensor:**
+```java
+ComparisonExpression {
+    operator = GREATER
+    left = SensorRead { sensor = DISTANCE, unit = CM }
+    right = NumberLiteral { value = 25 }
+}
+```
+
+**Corresponds to:** `getDistance() in cm > 25`
+
+---
+
+#### 🔹 UnaryExpression
+
+**Purpose:** Performs unary operations (operations with one operand).
+
+**Attributes:**
+- `operator: UnaryOperator` - MINUS (negation) or NOT (logical not)
+
+**References:**
+- `operand: Expression [1]` - The expression to operate on
+
+**Design Choice:** Supports both arithmetic negation (`-x`) and logical negation (`!condition`).
+
+**Example:**
+```java
+UnaryExpression {
+    operator = MINUS
+    operand = NumberLiteral { value = 5 }
+}
+```
+
+**Corresponds to:** `-5`
+
+```java
+UnaryExpression {
+    operator = NOT
+    operand = ComparisonExpression {
+        operator = EQUALS
+        left = VariableReference { variableName = "done" }
+        right = BooleanLiteral { value = true }
+    }
+}
+```
+
+**Corresponds to:** `!(done == true)` or `!done`
+
+---
+
+### 5. Enumerations
+
+#### 🔹 ReturnType
+
+**Purpose:** Specifies the return type of functions.
+
+**Values:**
+- `VOID` - Function returns no value
+- `NUMBER` - Function returns a numeric value
+- `BOOLEAN` - Function returns a boolean value
+
+**Design Choice:** Strongly typed return types enable compile-time type checking.
+
+**Example:**
+```
+let void square() { ... }      // ReturnType = VOID
+let number getDistance() { ... } // ReturnType = NUMBER
+let boolean isReady() { ... }   // ReturnType = BOOLEAN
+```
+
+---
+
+#### 🔹 VariableType
+
+**Purpose:** Specifies the type of variables and parameters.
+
+**Values:**
+- `NUMBER` - Numeric type (integers and decimals)
+- `BOOLEAN` - Boolean type (true/false)
+
+**Design Choice:** Simple type system with just two types, sufficient for robot control logic.
+
+**Example:**
+```
+var number count = 0        // VariableType = NUMBER
+var boolean ready = false   // VariableType = BOOLEAN
+```
+
+---
+
+#### 🔹 Direction
+
+**Purpose:** Movement directions for the robot.
+
+**Values:**
+- `FORWARD` - Move forward
+- `BACKWARD` - Move backward
+- `LEFT` - Move left (strafe)
+- `RIGHT` - Move right (strafe)
+
+**Design Choice:** Four-wheeled robot with omnidirectional capability supports all four cardinal directions.
+
+**Example:**
+```
+Forward 30 in cm   // Direction = FORWARD
+Backward 20 in cm  // Direction = BACKWARD
+Left 15 in cm      // Direction = LEFT
+Right 15 in cm     // Direction = RIGHT
+```
+
+---
+
+#### 🔹 RotationDirection
+
+**Purpose:** Rotation direction for the robot.
+
+**Values:**
+- `CLOCK` - Clockwise rotation
+- `COUNTERCLOCK` - Counter-clockwise rotation
+
+**Design Choice:** Clear, unambiguous direction names.
+
+**Example:**
+```
+Clock 90          // RotationDirection = CLOCK
+CounterClock 45   // RotationDirection = COUNTERCLOCK
+```
+
+---
+
+#### 🔹 DistanceUnit
+
+**Purpose:** Units for distance measurements.
+
+**Values:**
+- `CM` - Centimeters
+- `MM` - Millimeters
+
+**Design Choice:** Two common metric units suitable for small robot movements. Can be extended with meters, inches, etc.
+
+**Example:**
+```
+30 in cm    // DistanceUnit = CM
+300 in mm   // DistanceUnit = MM (equivalent to 30cm)
+```
+
+---
+
+#### 🔹 SpeedUnit
+
+**Purpose:** Units for speed measurements.
+
+**Values:**
+- `MM_PER_SEC` - Millimeters per second
+- `CM_PER_SEC` - Centimeters per second
+
+**Design Choice:** Speed is always "distance per second" - the enum specifies which distance unit.
+
+**Example:**
+```
+setSpeed(150 in mm)  // SpeedUnit = MM_PER_SEC → 150mm/s
+setSpeed(15 in cm)   // SpeedUnit = CM_PER_SEC → 15cm/s
+```
+
+---
+
+#### 🔹 ArithmeticOperator
+
+**Purpose:** Mathematical operators.
+
+**Values:**
+- `PLUS` - Addition (+)
+- `MINUS` - Subtraction (-)
+- `MULTIPLY` - Multiplication (*)
+- `DIVIDE` - Division (/)
+- `MODULO` - Modulo/remainder (%)
+
+**Design Choice:** Standard arithmetic operators for numeric computations.
+
+**Example:**
+```
+count + 1        // ArithmeticOperator = PLUS
+distance - 10    // ArithmeticOperator = MINUS
+speed * 2        // ArithmeticOperator = MULTIPLY
+total / 3        // ArithmeticOperator = DIVIDE
+x % 2            // ArithmeticOperator = MODULO
+```
+
+---
+
+#### 🔹 ComparisonOperator
+
+**Purpose:** Comparison operators for boolean expressions.
+
+**Values:**
+- `LESS` - Less than (<)
+- `LESS_EQ` - Less than or equal (<=)
+- `GREATER` - Greater than (>)
+- `GREATER_EQ` - Greater than or equal (>=)
+- `EQUALS` - Equal (==)
+- `NOT_EQUALS` - Not equal (!=)
+
+**Design Choice:** Complete set of comparison operators for conditional logic.
+
+**Example:**
+```
+count < 5          // ComparisonOperator = LESS
+distance <= 100    // ComparisonOperator = LESS_EQ
+speed > 50         // ComparisonOperator = GREATER
+time >= 1000       // ComparisonOperator = GREATER_EQ
+x == y             // ComparisonOperator = EQUALS
+ready != false     // ComparisonOperator = NOT_EQUALS
+```
+
+---
+
+#### 🔹 UnaryOperator
+
+**Purpose:** Unary operators.
+
+**Values:**
+- `MINUS` - Arithmetic negation (-)
+- `NOT` - Logical negation (!)
+
+**Design Choice:** Two essential unary operators for arithmetic and boolean logic.
+
+**Example:**
+```
+-count       // UnaryOperator = MINUS (negation)
+!ready       // UnaryOperator = NOT (logical not)
+```
+
+---
+
+#### 🔹 SensorType
+
+**Purpose:** Available robot sensors.
+
+**Values:**
+- `TIMESTAMP` - Time sensor (returns milliseconds)
+- `DISTANCE` - Ultrasound distance sensor (returns distance to obstacle)
+
+**Design Choice:** Currently supports two sensors. Can be extended with temperature, light, etc.
+
+**Example:**
+```
+getTimestamp()         // SensorType = TIMESTAMP
+getDistance() in cm    // SensorType = DISTANCE
+```
+
+---
+
+## 🎯 Key Design Decisions
+
+### 1. **Abstract Classes for Extensibility**
+
+**Decision:** Use `Statement`, `Expression`, `Command`, and `BinaryExpression` as abstract classes.
+
+**Rationale:**
+- **Type Safety:** Ensures only valid subclasses can be instantiated
+- **Polymorphism:** Collections can hold heterogeneous elements (e.g., `Statement [0..*]`)
+- **Extensibility:** Easy to add new statement types or expressions without modifying existing code
+- **Code Reuse:** Common behavior is factored into abstract parents
+
+**Example:** Function body can contain any mix of statements:
+```
+body: Statement [0..*]  // Can hold VariableDeclaration, Loop, Movement, etc.
+```
+
+---
+
+### 2. **Separation of Statement and Expression**
+
+**Decision:** Strict separation between statements (actions) and expressions (values).
+
+**Rationale:**
+- **Clear Semantics:** Statements perform actions; expressions compute values
+- **Type Checking:** Expressions have types (number/boolean); statements don't
+- **Error Prevention:** Cannot use a statement where an expression is expected
+- **Follows Paradigm:** Matches imperative programming languages (C, Java, Python)
+
+**Example:**
+```java
+// VALID: Expression used where Expression expected
+condition: Expression = ComparisonExpression { ... }
+
+// INVALID: Statement cannot be used as Expression
+condition: Expression = Loop { ... }  // ❌ Type error
+```
+
+---
+
+### 3. **Unit Handling with UnitExpression**
+
+**Decision:** Create a separate `UnitExpression` class that wraps any expression.
+
+**Rationale:**
+- **Flexibility:** Units can be applied to literals, variables, or complex expressions
+- **Composability:** `30 in cm`, `count in mm`, `(distance * 2) in cm` all work
+- **Separation of Concerns:** Unit conversion is separate from value computation
+- **Type Safety:** Units are enumeration values, preventing typos
+
+**Alternative Considered:** Embedding units directly in Movement/SetSpeed attributes
+- ❌ Less flexible: cannot apply units to arbitrary expressions
+- ❌ More duplication: every command needs unit handling logic
+
+---
+
+### 4. **String-based References vs. Direct References**
+
+**Decision:** Use `String` for variable/function names rather than EReference.
+
+**Rationale:**
+- **Simplicity:** Easier metamodel with fewer cross-references
+- **Deferred Resolution:** Name resolution happens during semantic analysis, not parsing
+- **Flexibility:** Can reference variables/functions defined later in the program
+
+**Trade-off:**
+- ✅ Simpler metamodel
+- ✅ More flexible syntax
+- ❌ Requires separate name resolution phase
+- ❌ No compile-time reference validation
+
+**Example:**
+```java
+Assignment {
+    variable: String = "count"  // String reference
+    value: Expression = ...
+}
+
+// vs. (not used)
+Assignment {
+    variable: EReference<VariableDeclaration>  // Direct reference
+    value: Expression = ...
+}
+```
+
+---
+
+### 5. **Command Hierarchy Design**
+
+**Decision:** Introduce intermediate `Command` abstract class between `Statement` and robot commands.
+
+**Rationale:**
+- **Semantic Grouping:** All robot actions are logically grouped
+- **Extensibility:** Easy to add new robot commands (e.g., `Wait`, `Beep`, `SetLight`)
+- **Reusability:** Can apply constraints/behaviors to all commands uniformly
+- **Clear Intent:** Documents that these are robot-specific actions
+
+**Alternative Considered:** Each command directly extends Statement
+- ❌ Less organized
+- ❌ Harder to identify robot-specific commands
+- ❌ Cannot apply command-specific constraints
+
+---
+
+### 6. **Mandatory vs. Optional References**
+
+**Decision:** Careful use of cardinalities `[0..1]`, `[1]`, `[0..*]`.
+
+**Examples:**
+- `Loop.condition [1]` - **Mandatory:** Every loop must have a condition
+- `VariableDeclaration.initialValue [0..1]` - **Optional:** Variables can be uninitialized
+- `Function.body [0..*]` - **Zero or more:** Empty function is valid (though useless)
+- `BinaryExpression.left [1]` - **Mandatory:** Binary operation needs both operands
+
+**Rationale:**
+- **Expressiveness:** Model captures domain constraints naturally
+- **Validation:** Invalid models are impossible to create
+- **Documentation:** Cardinalities document requirements clearly
+
+---
+
+### 7. **Enumeration-based Type Safety**
+
+**Decision:** Use enumerations for all fixed sets of values (operators, directions, units, types).
+
+**Rationale:**
+- **Type Safety:** Compiler prevents invalid values
+- **Code Completion:** IDEs can suggest valid values
+- **Documentation:** All valid values are explicitly listed
+- **Refactoring Safety:** Renaming a literal updates all uses
+
+**Alternative Considered:** String-based values
+- ❌ Typos cause runtime errors
+- ❌ No autocomplete
+- ❌ Hard to find all uses
+
+**Example:**
+```java
+// With enum (our choice)
+Movement { direction = Direction.FORWARD }  // ✅ Type-safe
+
+// With string (not used)
+Movement { direction = "forward" }  // ❌ Typo: "forwrd" would be valid!
+```
+
+---
+
+## 🧪 Complete Example: Square Pattern
+
+Here's how the complete program from the lab assignment maps to the metamodel:
+
+### Source Code:
+```
+let void entry () {
+    setSpeed(150 in mm)
+    var number count = 0
+    loop count < 5 {	
+        count = count + 1
+        square()
+    }
+}
+
+let void square(){
+    Forward 30 in cm
+    Clock 90
+    Forward 300 in mm
+    Clock 90
+    Forward 30 in cm
+    Clock 90
+    Forward 300 in mm
+    Clock 90
+}
+```
+
+### Metamodel Instance (Abbreviated):
+```java
+Program {
+    entry = Function {
+        name = "entry"
+        returnType = VOID
+        body = [
+            SetSpeed {
+                unit = MM_PER_SEC
+                speed = UnitExpression {
+                    unit = MM
+                    value = NumberLiteral { value = 150 }
+                }
+            },
+            VariableDeclaration {
+                name = "count"
+                type = NUMBER
+                initialValue = NumberLiteral { value = 0 }
+            },
+            Loop {
+                condition = ComparisonExpression {
+                    operator = LESS
+                    left = VariableReference { variableName = "count" }
+                    right = NumberLiteral { value = 5 }
+                }
+                body = [
+                    Assignment {
+                        variable = "count"
+                        value = ArithmeticExpression {
+                            operator = PLUS
+                            left = VariableReference { variableName = "count" }
+                            right = NumberLiteral { value = 1 }
+                        }
+                    },
+                    FunctionCall { functionName = "square" }
+                ]
+            }
+        ]
+    }
+    functions = [
+        Function {
+            name = "square"
+            returnType = VOID
+            body = [
+                Movement {
+                    direction = FORWARD
+                    unit = CM
+                    distance = UnitExpression {
+                        unit = CM
+                        value = NumberLiteral { value = 30 }
+                    }
+                },
+                Rotation {
+                    direction = CLOCK
+                    angle = NumberLiteral { value = 90 }
+                },
+                Movement {
+                    direction = FORWARD
+                    unit = MM
+                    distance = UnitExpression {
+                        unit = MM
+                        value = NumberLiteral { value = 300 }
+                    }
+                },
+                Rotation {
+                    direction = CLOCK
+                    angle = NumberLiteral { value = 90 }
+                },
+                // ... (2 more iterations)
+            ]
+        }
+    ]
+}
+```
+
+---
+
+## 📊 Statistics
+
+| Category | Count |
+|----------|-------|
+| **Total Classes** | 23 |
+| Abstract Classes | 4 |
+| Concrete Classes | 19 |
+| **Enumerations** | 10 |
+| **Total References** | 19 |
+| Containment References | 19 |
+| **Total Attributes** | 21 |
+
+---
+
+## 🔮 Future Extensions
+
+The metamodel is designed to easily accommodate:
+
+1. **New Commands:**
+   - `Wait` (pause execution)
+   - `Beep` (sound)
+   - `SetLight` (LED control)
+
+2. **New Sensors:**
+   - `TEMPERATURE`
+   - `LIGHT_LEVEL`
+   - `BATTERY_LEVEL`
+
+3. **New Expressions:**
+   - `LogicalExpression` (AND, OR)
+   - `TernaryExpression` (condition ? true : false)
+
+4. **New Statements:**
+   - `While` loop (different from current Loop)
+   - `For` loop with iterator
+   - `Switch` statement
+
+5. **Type System Enhancement:**
+   - `STRING` type
+   - `ARRAY` type
+   - User-defined types
+
+---
+
+## ✅ Validation Checklist
+
+- [x] All mandatory concepts included (movement, rotation, speed, sensors, units, arithmetic, boolean, loops, conditions, functions, variables)
+- [x] Metamodel is validated without errors
+- [x] Example program can be represented as instance
+- [x] Abstract classes used appropriately
+- [x] Cardinalities are correct
+- [x] Enumerations for type safety
+- [x] Clear separation of concerns (Statement vs Expression)
+- [x] Extensible design for future enhancements
+
+---
+
+## 📚 References
+
+- **Ecore Documentation:** https://wiki.eclipse.org/Ecore
+- **EMF Tutorial:** https://www.eclipse.org/modeling/emf/
+- **Lab Assignment:** Part 1 - Domain Modeling
+
+---
+
+**End of Documentation**
