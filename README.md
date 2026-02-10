@@ -338,14 +338,11 @@ To resolve the problem, install `langium-visitor` in global:
 npm i -g langium-visitor
 ```
 ---
+---
+---
+---
 
 # 📚 RoboML Metamodel - Complete Documentation
-
-## 🎯 Overview
-
-RoboML is a Domain-Specific Language (DSL) designed to control a four-wheeled robot with ultrasound sensors. This document describes the complete metamodel (abstract syntax) created using Eclipse Ecore.
-
----
 
 ## 📊 Complete Class Diagram (Mermaid)
 
@@ -357,18 +354,16 @@ classDiagram
     class Program {
         <<root>>
     }
-    Program "1" *-- "1" Function : entry
-    Program "1" *-- "0..*" Function : functions
-
+    
     %% ============================================
     %% FUNCTION & PARAMETER
     %% ============================================
     class Function {
         +String name
         +ReturnType returnType
+        +Parameter[0..*] parameters
+        +Statement[0..*] body
     }
-    Function "1" *-- "0..*" Parameter : parameters
-    Function "1" *-- "0..*" Statement : body
 
     class Parameter {
         +String name
@@ -385,28 +380,24 @@ classDiagram
     class VariableDeclaration {
         +String name
         +VariableType type
+        +Expression[0..1] initialValue
     }
-    Statement <|-- VariableDeclaration
-    VariableDeclaration "1" *-- "0..1" Expression : initialValue
 
     class Assignment {
         +String variable
+        +Expression[1] value
     }
-    Statement <|-- Assignment
-    Assignment "1" *-- "1" Expression : value
 
     class Loop {
+        +Expression[1] condition
+        +Statement[0..*] body
     }
-    Statement <|-- Loop
-    Loop "1" *-- "1" Expression : condition
-    Loop "1" *-- "0..*" Statement : body
 
     class Condition {
+        +Expression[1] condition
+        +Statement[0..*] thenBlock
+        +Statement[0..*] elseBlock
     }
-    Statement <|-- Condition
-    Condition "1" *-- "1" Expression : condition
-    Condition "1" *-- "0..*" Statement : thenBlock
-    Condition "1" *-- "0..*" Statement : elseBlock
 
     %% ============================================
     %% COMMAND HIERARCHY
@@ -414,32 +405,27 @@ classDiagram
     class Command {
         <<abstract>>
     }
-    Statement <|-- Command
 
     class Movement {
         +Direction direction
         +DistanceUnit unit
+        +Expression[1] distance
     }
-    Command <|-- Movement
-    Movement "1" *-- "1" Expression : distance
 
     class Rotation {
         +RotationDirection direction
+        +Expression[1] angle
     }
-    Command <|-- Rotation
-    Rotation "1" *-- "1" Expression : angle
 
     class SetSpeed {
         +SpeedUnit unit
+        +Expression[1] speed
     }
-    Command <|-- SetSpeed
-    SetSpeed "1" *-- "1" Expression : speed
 
     class FunctionCall {
         +String functionName
+        +Expression[0..*] arguments
     }
-    Command <|-- FunctionCall
-    FunctionCall "1" *-- "0..*" Expression : arguments
 
     %% ============================================
     %% EXPRESSION HIERARCHY
@@ -451,52 +437,47 @@ classDiagram
     class NumberLiteral {
         +double value
     }
-    Expression <|-- NumberLiteral
 
     class BooleanLiteral {
         +boolean value
     }
-    Expression <|-- BooleanLiteral
 
     class VariableReference {
         +String variableName
     }
-    Expression <|-- VariableReference
 
     class SensorRead {
         +SensorType sensor
-        +DistanceUnit unit
+        +DistanceUnit[0..1] unit
     }
-    Expression <|-- SensorRead
 
     class UnitExpression {
         +DistanceUnit unit
+        +Expression[1] value
     }
-    Expression <|-- UnitExpression
-    UnitExpression "1" *-- "1" Expression : value
 
     class BinaryExpression {
         <<abstract>>
+        +Expression[1] left
+        +Expression[1] right
     }
-    Expression <|-- BinaryExpression
-    BinaryExpression "1" *-- "1" Expression : left
-    BinaryExpression "1" *-- "1" Expression : right
 
     class ArithmeticExpression {
         +ArithmeticOperator operator
+        +Expression[1] left
+        +Expression[1] right
     }
-    BinaryExpression <|-- ArithmeticExpression
 
     class ComparisonExpression {
         +ComparisonOperator operator
+        +Expression[1] left
+        +Expression[1] right
     }
-    BinaryExpression <|-- ComparisonExpression
 
     class UnaryExpression {
         +UnaryOperator operator
+        +Expression[1] operand
     }
-    Expression <|-- UnaryExpression
-    UnaryExpression "1" *-- "1" Expression : operand
 
     %% ============================================
     %% ENUMERATIONS
@@ -570,11 +551,45 @@ classDiagram
         TIMESTAMP
         DISTANCE
     }
+
+    %% ============================================
+    %% RELATIONSHIPS (ONLY ARROWS)
+    %% ============================================
+    
+    %% Program relationships
+    Program "1" --> "1" Function : entry
+    Program "1" --> "0..*" Function : functions
+
+    %% Statement hierarchy
+    Statement <|-- VariableDeclaration
+    Statement <|-- Assignment
+    Statement <|-- Loop
+    Statement <|-- Condition
+    Statement <|-- Command
+
+    %% Command hierarchy
+    Command <|-- Movement
+    Command <|-- Rotation
+    Command <|-- SetSpeed
+    Command <|-- FunctionCall
+
+    %% Expression hierarchy
+    Expression <|-- NumberLiteral
+    Expression <|-- BooleanLiteral
+    Expression <|-- VariableReference
+    Expression <|-- SensorRead
+    Expression <|-- UnitExpression
+    Expression <|-- BinaryExpression
+    Expression <|-- UnaryExpression
+
+    %% BinaryExpression hierarchy
+    BinaryExpression <|-- ArithmeticExpression
+    BinaryExpression <|-- ComparisonExpression
 ```
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture
 
 The RoboML metamodel is organized into **5 main hierarchies**:
 
