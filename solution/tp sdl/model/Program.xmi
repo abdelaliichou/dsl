@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tp_sdl:Program
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:tp_sdl="http://www.example.org/tp_sdl"
+    xsi:schemaLocation="http://www.example.org/tp_sdl tp_sdl.ecore">
+  <entry name="entry"/>
+</tp_sdl:Program>

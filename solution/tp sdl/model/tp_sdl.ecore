@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="tp_sdl" nsURI="http://www.example.org/tp_sdl" nsPrefix="tp_sdl">
+  <!-- ============================================ -->
+  <!-- ROOT CLASS -->
+  <!-- ============================================ -->
+  <eClassifiers xsi:type="ecore:EClass" name="Program">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="entry" lowerBound="1" eType="#//Function" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="functions" upperBound="-1" eType="#//Function" containment="true"/>
+  </eClassifiers>
+
+  <!-- ============================================ -->
+  <!-- FUNCTION & PARAMETER -->
+  <!-- ============================================ -->
+  <eClassifiers xsi:type="ecore:EClass" name="Function">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="returnType" eType="#//ReturnType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parameters" upperBound="-1" eType="#//Parameter" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="body" upperBound="-1" eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Parameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//VariableType"/>
+  </eClassifiers>
+
+  <!-- ============================================ -->
+  <!-- STATEMENT HIERARCHY -->
+  <!-- ============================================ -->
+  <eClassifiers xsi:type="ecore:EClass" name="Statement" abstract="true"/>
+
+  <eClassifiers xsi:type="ecore:EClass" name="VariableDeclaration" eSuperTypes="#//Statement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//VariableType"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="initialValue" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Assignment" eSuperTypes="#//Statement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="variable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="value" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Loop" eSuperTypes="#//Statement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" lowerBound="1" eType="#//Expression" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="body" upperBound="-1" eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Condition" eSuperTypes="#//Statement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" lowerBound="1" eType="#//Expression" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="thenBlock" upperBound="-1" eType="#//Statement" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="elseBlock" upperBound="-1" eType="#//Statement" containment="true"/>
+  </eClassifiers>
+
+  <!-- ============================================ -->
+  <!-- COMMAND HIERARCHY -->
+  <!-- ============================================ -->
+  <eClassifiers xsi:type="ecore:EClass" name="Command" abstract="true" eSuperTypes="#//Statement"/>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Movement" eSuperTypes="#//Command">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="direction" eType="#//Direction"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//DistanceUnit"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="distance" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="Rotation" eSuperTypes="#//Command">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="direction" eType="#//RotationDirection"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="angle" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="SetSpeed" eSuperTypes="#//Command">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//SpeedUnit"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="speed" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="FunctionCall" eSuperTypes="#//Command">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="functionName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="arguments" upperBound="-1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <!-- ============================================ -->
+  <!-- EXPRESSION HIERARCHY -->
+  <!-- ============================================ -->
+  <eClassifiers xsi:type="ecore:EClass" name="Expression" abstract="true"/>
+
+  <eClassifiers xsi:type="ecore:EClass" name="NumberLiteral" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="BooleanLiteral" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="VariableReference" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="variableName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="SensorRead" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="sensor" eType="#//SensorType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//DistanceUnit"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="UnitExpression" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//DistanceUnit"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="value" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="BinaryExpression" abstract="true" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" lowerBound="1" eType="#//Expression" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ArithmeticExpression" eSuperTypes="#//BinaryExpression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="operator" eType="#//ArithmeticOperator"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="ComparisonExpression" eSuperTypes="#//BinaryExpression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="operator" eType="#//ComparisonOperator"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EClass" name="UnaryExpression" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="operator" eType="#//UnaryOperator"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="operand" lowerBound="1" eType="#//Expression" containment="true"/>
+  </eClassifiers>
+
+  <!-- ============================================ -->
+  <!-- ENUMERATIONS -->
+  <!-- ============================================ -->
+  <eClassifiers xsi:type="ecore:EEnum" name="ReturnType">
+    <eLiterals name="VOID" value="0"/>
+    <eLiterals name="NUMBER" value="1"/>
+    <eLiterals name="BOOLEAN" value="2"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="VariableType">
+    <eLiterals name="NUMBER" value="0"/>
+    <eLiterals name="BOOLEAN" value="1"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="Direction">
+    <eLiterals name="FORWARD" value="0"/>
+    <eLiterals name="BACKWARD" value="1"/>
+    <eLiterals name="LEFT" value="2"/>
+    <eLiterals name="RIGHT" value="3"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="RotationDirection">
+    <eLiterals name="CLOCK" value="0"/>
+    <eLiterals name="COUNTERCLOCK" value="1"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="DistanceUnit">
+    <eLiterals name="CM" value="0"/>
+    <eLiterals name="MM" value="1"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="SpeedUnit">
+    <eLiterals name="MM_PER_SEC" value="0"/>
+    <eLiterals name="CM_PER_SEC" value="1"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="ArithmeticOperator">
+    <eLiterals name="PLUS" value="0"/>
+    <eLiterals name="MINUS" value="1"/>
+    <eLiterals name="MULTIPLY" value="2"/>
+    <eLiterals name="DIVIDE" value="3"/>
+    <eLiterals name="MODULO" value="4"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="ComparisonOperator">
+    <eLiterals name="LESS" value="0"/>
+    <eLiterals name="LESS_EQ" value="1"/>
+    <eLiterals name="GREATER" value="2"/>
+    <eLiterals name="GREATER_EQ" value="3"/>
+    <eLiterals name="EQUALS" value="4"/>
+    <eLiterals name="NOT_EQUALS" value="5"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="UnaryOperator">
+    <eLiterals name="MINUS" value="0"/>
+    <eLiterals name="NOT" value="1"/>
+  </eClassifiers>
+
+  <eClassifiers xsi:type="ecore:EEnum" name="SensorType">
+    <eLiterals name="TIMESTAMP" value="0"/>
+    <eLiterals name="DISTANCE" value="1"/>
+  </eClassifiers>
+
+</ecore:EPackage>
