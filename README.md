@@ -353,6 +353,8 @@ classDiagram
     %% ============================================
     class Program {
         <<root>>
+         + Function entry
+         + Function[0..*] functions
     }
     
     %% ============================================
@@ -483,20 +485,20 @@ classDiagram
     %% ENUMERATIONS
     %% ============================================
     class ReturnType {
-        <<enumeration>>
+        <<enum>>
         VOID
         NUMBER
         BOOLEAN
     }
 
     class VariableType {
-        <<enumeration>>
+        <<enum>>
         NUMBER
         BOOLEAN
     }
 
     class Direction {
-        <<enumeration>>
+        <<enum>>
         FORWARD
         BACKWARD
         LEFT
@@ -504,25 +506,25 @@ classDiagram
     }
 
     class RotationDirection {
-        <<enumeration>>
+        <<enum>>
         CLOCK
         COUNTERCLOCK
     }
 
     class DistanceUnit {
-        <<enumeration>>
+        <<enum>>
         CM
         MM
     }
 
     class SpeedUnit {
-        <<enumeration>>
+        <<enum>>
         MM_PER_SEC
         CM_PER_SEC
     }
 
     class ArithmeticOperator {
-        <<enumeration>>
+        <<enum>>
         PLUS
         MINUS
         MULTIPLY
@@ -531,7 +533,7 @@ classDiagram
     }
 
     class ComparisonOperator {
-        <<enumeration>>
+        <<enum>>
         LESS
         LESS_EQ
         GREATER
@@ -541,13 +543,13 @@ classDiagram
     }
 
     class UnaryOperator {
-        <<enumeration>>
+        <<enum>>
         MINUS
         NOT
     }
 
     class SensorType {
-        <<enumeration>>
+        <<enum>>
         TIMESTAMP
         DISTANCE
     }
