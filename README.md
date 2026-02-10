@@ -561,6 +561,23 @@ classDiagram
     %% Program relationships
     Program "1" --> "1" Function : entry
     Program "1" --> "0..*" Function : functions
+    UnaryExpression "1" *-- "1" Expression : operand
+    BinaryExpression "1" *-- "1" Expression : left
+    BinaryExpression "1" *-- "1" Expression : right
+    UnitExpression "1" *-- "1" Expression : value
+    FunctionCall "1" *-- "0..*" Expression : arguments
+    SetSpeed "1" *-- "1" Expression : speed
+    Rotation "1" *-- "1" Expression : angle
+    Movement "1" *-- "1" Expression : distance
+    Condition "1" *-- "1" Expression : condition
+    Condition "1" *-- "0..*" Statement : thenBlock
+    Condition "1" *-- "0..*" Statement : elseBlock
+    Loop "1" *-- "1" Expression : condition
+    Loop "1" *-- "0..*" Statement : body
+    Assignment "1" *-- "1" Expression : value
+    VariableDeclaration "1" *-- "0..1" Expression : initialValue
+    Function "1" *-- "0..*" Parameter : parameters
+    Function "1" *-- "0..*" Statement : body
 
     %% Statement hierarchy
     Statement <|-- VariableDeclaration
