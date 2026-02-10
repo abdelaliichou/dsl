@@ -628,8 +628,6 @@ The RoboML metamodel is organized into **5 main hierarchies**:
 
 **Purpose:** Entry point of a RoboML program. Contains all function definitions.
 
-**Attributes:** None
-
 **References:**
 - `entry: Function [1]` - The main entry function (mandatory)
 - `functions: Function [0..*]` - Additional function definitions
@@ -713,7 +711,7 @@ Parameter {
 
 **Purpose:** Base class for all executable instructions.
 
-**Why Abstract?** Cannot be instantiated directly. Provides a common type for all statements, enabling polymorphic collections (e.g., `body: Statement [0..*]` in Function).
+**Why Abstract?** Cannot be instantiated directly. Provides a common type for all statements, enabling polymorphic collections.
 
 **Concrete Subclasses:**
 - `VariableDeclaration`
@@ -722,7 +720,7 @@ Parameter {
 - `Condition`
 - `Command` (and its subclasses)
 
-**Design Choice:** Using an abstract base class allows us to create heterogeneous collections of statements, making it easy to represent a sequence of different instruction types in function bodies or control structures.
+**Design Choice:** Using an abstract base class allows us to create collections of statements, making it easy to represent a sequence of different instruction types in function body.
 
 ---
 
@@ -788,7 +786,7 @@ Assignment {
 - `condition: Expression [1]` - Loop condition (must evaluate to boolean)
 - `body: Statement [0..*]` - Statements to repeat
 
-**Design Choice:** The condition must always be present (`[1]`), but the body can be empty (`[0..*]`), though an empty loop is useless in practice.
+**Design Choice:** The condition must always be present (`[1]`), but the body can be empty (`[0..*]`), though an empty loop is useless.
 
 **Example:**
 ```java
@@ -1012,8 +1010,6 @@ FunctionCall {
 - **Statements**: perform actions (no return value)
 - **Expressions**: compute values (return number or boolean)
 
-This matches imperative programming paradigms and enables type checking.
-
 ---
 
 #### 🔹 NumberLiteral
@@ -1059,7 +1055,7 @@ BooleanLiteral { value = false }
 **Attributes:**
 - `variableName: String` - Name of the variable
 
-**Design Choice:** Uses String name instead of a direct reference to VariableDeclaration. This simplifies the metamodel but requires scope resolution during interpretation/compilation.
+**Design Choice:** Uses String name instead of a direct reference to VariableDeclaration. This simplifies the metamodel.
 
 **Example:**
 ```java
@@ -1478,7 +1474,7 @@ getDistance() in cm    // SensorType = DISTANCE
 
 ---
 
-## 🎯 Key Design Decisions
+## Key Design Decisions
 
 ### 1. **Abstract Classes for Extensibility**
 
@@ -1528,10 +1524,6 @@ condition: Expression = Loop { ... }  // ❌ Type error
 - **Separation of Concerns:** Unit conversion is separate from value computation
 - **Type Safety:** Units are enumeration values, preventing typos
 
-**Alternative Considered:** Embedding units directly in Movement/SetSpeed attributes
-- ❌ Less flexible: cannot apply units to arbitrary expressions
-- ❌ More duplication: every command needs unit handling logic
-
 ---
 
 ### 4. **String-based References vs. Direct References**
@@ -1540,7 +1532,6 @@ condition: Expression = Loop { ... }  // ❌ Type error
 
 **Rationale:**
 - **Simplicity:** Easier metamodel with fewer cross-references
-- **Deferred Resolution:** Name resolution happens during semantic analysis, not parsing
 - **Flexibility:** Can reference variables/functions defined later in the program
 
 **Trade-off:**
@@ -1743,36 +1734,6 @@ Program {
 
 ---
 
-## 🔮 Future Extensions
-
-The metamodel is designed to easily accommodate:
-
-1. **New Commands:**
-   - `Wait` (pause execution)
-   - `Beep` (sound)
-   - `SetLight` (LED control)
-
-2. **New Sensors:**
-   - `TEMPERATURE`
-   - `LIGHT_LEVEL`
-   - `BATTERY_LEVEL`
-
-3. **New Expressions:**
-   - `LogicalExpression` (AND, OR)
-   - `TernaryExpression` (condition ? true : false)
-
-4. **New Statements:**
-   - `While` loop (different from current Loop)
-   - `For` loop with iterator
-   - `Switch` statement
-
-5. **Type System Enhancement:**
-   - `STRING` type
-   - `ARRAY` type
-   - User-defined types
-
----
-
 ## ✅ Validation Checklist
 
 - [x] All mandatory concepts included (movement, rotation, speed, sensors, units, arithmetic, boolean, loops, conditions, functions, variables)
@@ -1783,15 +1744,3 @@ The metamodel is designed to easily accommodate:
 - [x] Enumerations for type safety
 - [x] Clear separation of concerns (Statement vs Expression)
 - [x] Extensible design for future enhancements
-
----
-
-## 📚 References
-
-- **Ecore Documentation:** https://wiki.eclipse.org/Ecore
-- **EMF Tutorial:** https://www.eclipse.org/modeling/emf/
-- **Lab Assignment:** Part 1 - Domain Modeling
-
----
-
-**End of Documentation**
