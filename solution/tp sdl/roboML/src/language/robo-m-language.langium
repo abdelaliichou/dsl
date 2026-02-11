@@ -1,111 +1,217 @@
 grammar RoboMLanguage
+import 'Terminals'
+import 'tp_sdl-types'
 
-entry Program:
+// ============================================
+// ENTRY POINT
+// ============================================
+
+entry Program returns Program:
     (functions+=FunctionDeclaration)*
     entry=EntryFunction
     (functions+=FunctionDeclaration)*;
 
-EntryFunction:
-    'let' returnType=('void' | 'number' | 'boolean') 'entry' '(' (parameters+=Parameter (',' parameters+=Parameter)*)? ')' 
-    '{' 
-        (body+=Statement)* 
-    '}';
+// ============================================
+// FUNCTIONS
+// ============================================
 
-FunctionDeclaration:
-    'let' returnType=('void' | 'number' | 'boolean') name=ID '(' (parameters+=Parameter (',' parameters+=Parameter)*)? ')' 
-    '{' 
-        (body+=Statement)* 
-    '}';
 
-Parameter:
-    type=('number' | 'boolean') name=ID;
+EntryFunction returns MyFunction:
+    'let' returnType=ReturnType 'entry' '(' (parameters+=Parameter (',' parameters+=Parameter)*)? ')' 
+    '{' (body+=Statement)* '}'
+;
+
+FunctionDeclaration returns MyFunction:
+    'let' returnType=ReturnType name=ID '(' (parameters+=Parameter (',' parameters+=Parameter)*)? ')' 
+    '{' (body+=Statement)* '}'
+;
+
+Parameter returns Parameter:
+    type=VariableType name=ID
+;
 
 // ============================================
 // STATEMENTS
 // ============================================
 
-Statement:
+Statement returns Statement:
     VariableDeclaration | Assignment | Loop | Condition | Command;
 
-VariableDeclaration:
-    'var' type=('number' | 'boolean') name=ID ('=' initialValue=Expression)?;
+// --- Variable Declaration
+VariableDeclaration returns VariableDeclaration:
+    'var' type=VariableType name=ID ('=' initialValue=ComparisonExpression)?
+;
 
-Assignment:
-    variable=ID '=' value=Expression;
+// --- Assignment
+Assignment returns Assignment:
+    variable=ID '=' value=ComparisonExpression
+;
 
-Loop:
-    'loop' condition=Expression '{' (body+=Statement)* '}';
+// --- Loop
+Loop returns Loop:
+    'loop' condition=ComparisonExpression '{' (body+=Statement)* '}'
+;
 
-Condition:
-    'if' condition=Expression '{' (thenBlock+=Statement)* '}' 
-    ('else' '{' (elseBlock+=Statement)* '}')?;
+// --- Conditional
+Condition returns Condition:
+    'if' condition=ComparisonExpression '{' (thenBlock+=Statement)* '}' 
+    ('else' '{' (elseBlock+=Statement)* '}')?
+;
 
 // ============================================
 // COMMANDS
 // ============================================
 
-Command:
+Command returns Command:
     SetSpeed | Movement | Rotation | FunctionCall;
 
-Movement:
-    direction=('Forward' | 'Backward' | 'Left' | 'Right') distance=Expression 'in' unit=('cm' | 'mm');
+// --- Movement
+Movement returns Movement:
+    direction=Direction distance=ComparisonExpression 'in' unit=DistanceUnit
+;
 
-Rotation:
-    direction=('Clock' | 'CounterClock') angle=Expression;
+// --- Rotation
+Rotation returns Rotation:
+    direction=RotationDirection angle=ComparisonExpression
+;
 
-SetSpeed:
-    'setSpeed' '(' speed=Expression 'in' unit=('cm' | 'mm') ')';
+// --- SetSpeed
+SetSpeed returns SetSpeed:
+    'setSpeed' '(' speed=ComparisonExpression 'in' unit=SpeedUnit ')'
+;
 
-FunctionCall:
-    functionName=ID '(' (arguments+=Expression (',' arguments+=Expression)*)? ')';
+// --- FunctionCall
+FunctionCall returns FunctionCall:
+    functionName=ID '(' (arguments+=ComparisonExpression (',' arguments+=ComparisonExpression)*)? ')'
+;
 
 // ============================================
-// EXPRESSIONS (with operator precedence)
+// EXPRESSIONS (PROPER HIERARCHY WITH PRECEDENCE)
 // ============================================
 
-Expression:
-    ComparisonExpression;
+// Top level - handles both comparison and arithmetic
+Expression returns Expression:
+    ComparisonExpression
+;
 
-ComparisonExpression infers Expression:
-    AdditiveExpression ({infer ComparisonExpression.left=current} operator=('<' | '<=' | '>' | '>=' | '==' | '!=') right=AdditiveExpression)*;
+// Comparison level (lowest precedence, returns boolean)
+ComparisonExpression returns Expression:
+    ArithmeticExpression ({ComparisonExpression.left=current} operator=ComparisonOperator right=ArithmeticExpression)?
+;
 
-AdditiveExpression infers Expression:
-    MultiplicativeExpression ({infer ArithmeticExpression.left=current} operator=('+' | '-') right=MultiplicativeExpression)*;
+// Arithmetic level (higher precedence, returns number)
+ArithmeticExpression returns Expression:
+    UnaryExpression ({ArithmeticExpression.left=current} operator=ArithmeticOperator right=UnaryExpression)?
+;
 
-MultiplicativeExpression infers Expression:
-    UnaryExpression ({infer ArithmeticExpression.left=current} operator=('*' | '/' | '%') right=UnaryExpression)*;
+// Unary level
+UnaryExpression returns Expression:
+    {UnaryExpression} operator=UnaryOperator operand=PrimaryExpression
+    | PrimaryExpression
+;
 
-UnaryExpression infers Expression:
-    {infer UnaryExpression} operator=('-' | '!') operand=PrimaryExpression |
-    PrimaryExpression;
+// Primary expressions (highest precedence)
+PrimaryExpression returns Expression:
+    '(' ComparisonExpression ')'
+    | NumberLiteral
+    | BooleanLiteral  
+    | SensorRead
+    | FunctionCall
+    | VariableReference
+;
 
-PrimaryExpression infers Expression:
-    '(' Expression ')' |
-    NumberLiteral | 
-    BooleanLiteral | 
-    SensorRead | 
-    VariableReference;
+// --- Literals & References
+NumberLiteral returns NumberLiteral:
+    value=EDouble
+;
 
-NumberLiteral:
-    value=NUMBER;
+EDouble returns number:
+    '-'? INT ('.' INT)? (('E' | 'e') '-'? INT)?
+;
 
-BooleanLiteral:
-    value?='true' | 'false';
+BooleanLiteral returns BooleanLiteral:
+    value?='true' | 'false'
+;
 
-VariableReference:
-    variableName=ID;
+VariableReference returns VariableReference:
+    variableName=ID
+;
 
-SensorRead:
+SensorRead returns SensorRead:
     'getTimestamp' '(' ')' |
-    'getDistance' '(' ')' 'in' unit=('cm' | 'mm');
+    'getDistance' '(' ')' 'in' unit=DistanceUnit
+;
 
 // ============================================
-// TERMINALS
+// ECORE ENUM / TYPE WRAPPERS
 // ============================================
 
-terminal ID: /[_a-zA-Z][\w_]*/;
-terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
+ReturnType returns ReturnType:
+    ReturnType_VOID | ReturnType_NUMBER | ReturnType_BOOLEAN
+;
+ReturnType_VOID returns ReturnType_VOID: 'VOID';
+ReturnType_NUMBER returns ReturnType_NUMBER: 'NUMBER';
+ReturnType_BOOLEAN returns ReturnType_BOOLEAN: 'BOOLEAN';
 
-hidden terminal WS: /\s+/;
-hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
-hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
+VariableType returns VariableType:
+    VariableType_NUMBER | VariableType_BOOLEAN
+;
+VariableType_NUMBER returns VariableType_NUMBER: 'NUMBER';
+VariableType_BOOLEAN returns VariableType_BOOLEAN: 'BOOLEAN';
+
+Direction returns Direction:
+    Direction_FORWARD | Direction_BACKWARD | Direction_LEFT | Direction_RIGHT
+;
+Direction_FORWARD returns Direction_FORWARD: 'FORWARD' ;
+Direction_BACKWARD returns Direction_BACKWARD: 'BACKWARD' ;
+Direction_LEFT returns Direction_LEFT: 'LEFT' ;
+Direction_RIGHT returns Direction_RIGHT: 'RIGHT' ;
+
+RotationDirection returns RotationDirection:
+    RotationDirection_CLOCK | RotationDirection_COUNTERCLOCK
+;
+RotationDirection_CLOCK returns RotationDirection_CLOCK: 'CLOCK';
+RotationDirection_COUNTERCLOCK returns RotationDirection_COUNTERCLOCK: 'COUNTERCLOCK';
+
+DistanceUnit returns DistanceUnit:
+    DistanceUnit_CM | DistanceUnit_MM
+;
+DistanceUnit_CM returns DistanceUnit_CM: 'CM';
+DistanceUnit_MM returns DistanceUnit_MM: 'MM';
+
+SpeedUnit returns SpeedUnit:
+    SpeedUnit_MM_PER_SEC | SpeedUnit_CM_PER_SEC
+;
+SpeedUnit_MM_PER_SEC returns SpeedUnit_MM_PER_SEC: 'MM_PER_SEC';
+SpeedUnit_CM_PER_SEC returns SpeedUnit_CM_PER_SEC: 'CM_PER_SEC';
+
+ArithmeticOperator returns ArithmeticOperator:
+    ArithmeticOperator_PLUS | ArithmeticOperator_MINUS | ArithmeticOperator_MULTIPLY | ArithmeticOperator_DIVIDE | ArithmeticOperator_MODULO
+;
+ArithmeticOperator_PLUS returns ArithmeticOperator_PLUS: 'PLUS' ;
+ArithmeticOperator_MINUS returns ArithmeticOperator_MINUS: 'MINUS' ;
+ArithmeticOperator_MULTIPLY returns ArithmeticOperator_MULTIPLY: 'MULTIPLY' ;
+ArithmeticOperator_DIVIDE returns ArithmeticOperator_DIVIDE: 'DIVIDE' ;
+ArithmeticOperator_MODULO returns ArithmeticOperator_MODULO: 'MODULO' ;
+
+ComparisonOperator returns ComparisonOperator:
+    ComparisonOperator_LESS | ComparisonOperator_LESS_EQ | ComparisonOperator_GREATER | ComparisonOperator_GREATER_EQ | ComparisonOperator_EQUALS | ComparisonOperator_NOT_EQUALS
+;
+ComparisonOperator_LESS returns ComparisonOperator_LESS: 'LESS' ;
+ComparisonOperator_LESS_EQ returns ComparisonOperator_LESS_EQ: 'LESS_EQ' ;
+ComparisonOperator_GREATER returns ComparisonOperator_GREATER: 'GREATER' ;
+ComparisonOperator_GREATER_EQ returns ComparisonOperator_GREATER_EQ: 'GREATER_EQ' ;
+ComparisonOperator_EQUALS returns ComparisonOperator_EQUALS: 'EQUALS' ;
+ComparisonOperator_NOT_EQUALS returns ComparisonOperator_NOT_EQUALS: 'NOT_EQUALS' ;
+
+UnaryOperator returns UnaryOperator:
+    UnaryOperator_MINUS | UnaryOperator_NOT
+;
+UnaryOperator_MINUS returns UnaryOperator_MINUS: 'MINUS';
+UnaryOperator_NOT returns UnaryOperator_NOT: 'NOT';
+
+SensorType returns SensorType:
+    SensorType_TIMESTAMP | SensorType_DISTANCE
+;
+SensorType_TIMESTAMP returns SensorType_TIMESTAMP: 'TIMESTAMP';
+SensorType_DISTANCE returns SensorType_DISTANCE: 'DISTANCE';

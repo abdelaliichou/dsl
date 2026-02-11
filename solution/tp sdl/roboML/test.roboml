@@ -1,0 +1,7 @@
+let number badFunction() {
+    return true  // ❌ Should error
+}
+
+let void entry() {
+    var number x = badFunction()
+}
