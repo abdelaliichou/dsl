@@ -1,6 +1,7 @@
 import { MonacoEditorLanguageClientWrapper, UserConfig } from 'monaco-editor-wrapper';
 import { configureWorker, defineUserServices } from './setupCommon.js';
 import monarchSyntax from "./syntaxes/robo-m-language.monarch.js";
+import { setup } from './web/setup.js';
 
 export const setupConfigClassic = (): UserConfig => {
     return {
@@ -23,8 +24,20 @@ export const setupConfigClassic = (): UserConfig => {
     };
 };
 
+function getDocumentUri(wrapper: MonacoEditorLanguageClientWrapper): string {
+    return wrapper.getModel()!.uri.toString();
+}
+
 export const executeClassic = async (htmlElement: HTMLElement) => {
     const userConfig = setupConfigClassic();
     const wrapper = new MonacoEditorLanguageClientWrapper();
     await wrapper.initAndStart(userConfig, htmlElement);
+
+    // Added for Interpreter lab part
+    const client = wrapper.getLanguageClient();
+    if (!client) {
+        throw new Error('Unable to obtain language client!');
+    }
+    setup(client, getDocumentUri(wrapper)); // setup function of the setup.ts file
 };
+
