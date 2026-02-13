@@ -101,11 +101,14 @@ export function setup(client: MonacoLanguageClient, uri: string) {
 
     // Listen to custom notifications coming from the server, here to call the "test" function
     client.onNotification('custom/hello', hello);
+    client.onNotification('custom/interpretor', typecheck);
+
 
     // Listen to the button click to notify the server to hello the code
     // win.hello is called in the index.html file, line 13
     win.hello = () => client.sendNotification('custom/hello');
     // TODO : to adapt
+    win.interpretor = () => client.sendNotification('custom/interpretor',uri)
     win.execute = execute;
-    win.execute = typecheck;
+    win.typecheck = typecheck;
 }
