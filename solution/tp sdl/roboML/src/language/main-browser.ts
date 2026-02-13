@@ -1,5 +1,5 @@
 import { EmptyFileSystem, URI } from 'langium';
-import { Program, RoboMLanguageValidationVisitor } from '../semantics/robo-m-language-visitor.js'
+import { Program } from '../semantics/robo-m-language-visitor.js'
 import { startLanguageServer } from 'langium/lsp';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser.js';
 import { createRoboMLanguageServices } from './robo-m-language-module.js';
