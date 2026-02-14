@@ -1744,3 +1744,57 @@ Program {
 - [x] Enumerations for type safety
 - [x] Clear separation of concerns (Statement vs Expression)
 - [x] Extensible design for future enhancements
+
+___
+___
+___
+
+# Part 3 
+## Setup
+Here is what we've done to setup this third part (We just followed the instructions above) :
+When placed at `solution/tp \sdl/roboML/.` exec :
+```sh
+npm i -D langium-visitor
+```
+Then, we added `"langium:visitor": "langium-visitor"` in the `package.json`.
+and execute it : 
+```sh
+npm run langium:visitor
+```
+It generates a new `semantics` folders in which we copied generator.ts (and modified a line for the import).
+And we're done for now.
+We can know see the `robo-m-language-visitor.ts` and `robo-m-language-accept.ts` that we will be able to use to build our Interpretor and our Compilator.
+
+## Interpretor
+We copied the content of the `interpreter` folder at root and manage to modify some code lines to make it work and reliable.
+
+Then we get the package for the scene : 
+```sh
+npm i p5@1.11.3
+npm i -D @types/p5@1.7.6
+```
+
+And now we can run the server/client with the command : 
+```sh
+npm run serve
+```
+### Client / Server
+We have to do a button for the typechecking, for the parsing/validating and then the executing ?
+does the parsing build the scene ? Because it is an interpretor, we can technicaly try to build the scene until we pass throught an error and so we just stop o build the scene but we can return it anyway.
+
+
+### Visitor
+Now, our goal is to complete the [`interpreter.ts`](./solution/tp%20sdl/roboML/src/semantics/interpreter.ts) script with the visitor generated.
+Our entry point will be the Program.
+Then we need to pass trhought each functions to get their name in case they're called later in the execution.
+Next, we just enter in the entry() function.
+A function body is an array of statement, but we don't want to know each time which type of statement it is (because statement is an abstract type). 
+So we just do a `statement.accept(this)` and the concerned visitor method will be call after that.
+
+### Scene building
+We have to study a bit the concepts of the scene and the entities.
+And complete them at all.
+
+Maybe should we add the Side move to our language ? Not mandatory, but it can be cool.
+
+

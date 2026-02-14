@@ -31,14 +31,29 @@ export class Robot implements Entities{
 
     turn(angle:number) : void {
         // To implement
+        this.rad += angle //Like we just add the angle to our current angle.
     }
 
+    //FOR BOTH MOVE AND TURN : Do we have to implement the timestamp composant ? 
     move(dist:number) : void {
         // To implement
+        const move = Vector.fromAngle(
+            this.rad,
+            dist
+        )
+        this.pos.x += move.x
+        this.pos.y += move.y
     }
 
+    //Right is Positive, Left is Negative
     side(dist:number) : void {
-        // To implement
+        // To implement : But i don't know if we implement it in our language
+        const side = Vector.fromAngle(
+            this.rad,
+            dist
+        )
+        this.pos.x += side.y //Is that ok ? I think so.
+        this.pos.y += side.x
     }
 
     getRay(){

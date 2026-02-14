@@ -26,16 +26,21 @@ function getModelFromUri(uri: string): Program | undefined {
 
 connection.onNotification("custom/hello", (uri: string) => connection.sendNotification("custom/hello", "World"));
 connection.onNotification("custom/interpretor", (uri: string) => {
-
     const program = getModelFromUri(uri);
 
     if (!program) {
-        connection.sendNotification("custom/interpretor", "Program is invalid.");
+        connection.sendNotification("custom/interpretor", {
+            msg:"Program is invalid.",
+            success : false
+        });
         return;
     }
     const visitor = new InterpretorRoboMLanguageVisitor();
+    const scene = visitor.visitProgram(program)
+    // const result = program.accept(visitor);
 
-    const result = program.accept(visitor);
-
-    connection.sendNotification("custom/interpretor", result);
+    connection.sendNotification("custom/interpretor", {
+        success: true,
+        scene
+    });
 });
