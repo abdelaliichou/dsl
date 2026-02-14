@@ -1,4 +1,5 @@
 import { BaseScene } from '../web/simulator/scene.js';
+import * as Entities from '../web/simulator/entities.js';
 import type { ArithmeticExpression, Assignment, BinaryExpression, BooleanLiteral, Command, ComparisonExpression, Condition, Expression, FunctionCall, Loop, Movement, MyFunction, NumberLiteral, Parameter, Program, RoboMLanguageVisitor, Rotation, SensorRead, SetSpeed, Statement, UnaryExpression, UnitExpression, VariableDeclaration, VariableReference } from './robo-m-language-visitor.js';
 
 interface IStack<T> {
@@ -38,6 +39,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     private functions = new Map<string, MyFunction>();
     private scopeVariables = new Stack<Map<string, any>>;
     private currentSpeed:number = 1; 
+    private rotationSpeed = Math.PI / 2 //So it's 90° per second
 
     visitExpression(node: Expression) {
         node.accept(this); // Auto-dispatch
@@ -127,6 +129,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
             for (var statement of node.body) {
                 statement.accept(this); //Auto-dispatch the visitor in the right visit method.
             }
+            //FIXME: If returnType of the function is something else than VOID, we should control and return the last ligne.
         }
     }
     visitParameter(node: Parameter) {
@@ -178,37 +181,48 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     visitMovement(node: Movement) {
         var dist = node.distance.accept(this);
         //var unit = node.unit.accept(this) // Wtf c'est pas une DistanceUnit ? :(
-        var unit2 = 0;
+        var unit2 = 1;
         switch (node.unit) {
             case 'CM': unit2 = 10
             case 'MM': unit2 = 1
         }
-        switch(node.direction){ //Let's call scene/entities methods
-            case 'FORWARD': this.scene.robot.move(dist*unit2)
-            case 'BACKWARD': this.scene.robot.move(-dist * unit2)
-            case 'LEFT': this.scene.robot.side(-dist * unit2)
-            case 'RIGHT': this.scene.robot.side(dist * unit2)
+        var calcDist = dist*unit2;
+        switch (node.direction) { //Let's call scene/entities methods
+            case 'FORWARD': this.scene.robot.move(calcDist)
+            case 'BACKWARD': this.scene.robot.move(-calcDist)
+            case 'LEFT': this.scene.robot.side(-calcDist)
+            case 'RIGHT': this.scene.robot.side(calcDist)
         }
+
+        var duration = Math.abs(calcDist) / this.currentSpeed
+        // Save timestamp snapshot
+        this.scene.time += duration;
+        this.scene.timestamps.push(
+            new Entities.Timestamp(this.scene.time, this.scene.robot)
+        );
     }
 
+    //On part sur genre 1seconde/90deg ? 
     //FIXME: Implement timestamps with currentSpeed
     visitRotation(node: Rotation) {
         var angle = node.angle.accept(this) * Math.PI / 180 // Normalement c'est bon nan ? J'ai copié ça dans le entities.ts
         var direction = 0;
         switch (node.direction) {
-            case 'CLOCK': 1
-            case 'COUNTERCLOCK': -1
+            case 'CLOCK': direction = 1;
+            case 'COUNTERCLOCK': direction = -1;
         }
         this.scene.robot.turn(angle*direction)
+
+        var duration = angle / this.rotationSpeed; 
+        this.scene.time += duration
+        this.scene.timestamps.push(new Entities.Timestamp(this.scene.time,this.scene.robot))
     }
 
     visitSetSpeed(node: SetSpeed) {
         var speed = node.speed.accept(this)
-        var unit = 0 //AGAIN :(
-        switch (node.unit) {
-            case 'MM_PER_SEC': 1
-            case 'CM_PER_SEC': 10
-        }
+        var unit =  //AGAIN :(
+            node.unit === 'CM_PER_SEC' ? 10 :
+            node.unit === 'MM_PER_SEC' ? 1 : 1 //BOOM autre manière de faie, mais c'est très équivalent à un switch quoi mdr
         this.currentSpeed = speed*unit
     }
 

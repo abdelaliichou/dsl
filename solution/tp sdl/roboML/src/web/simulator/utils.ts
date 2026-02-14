@@ -40,6 +40,10 @@ export class Vector {
     norm() : number{
         return Math.sqrt(this.x*this.x + this.y*this.y);
     }
+
+    rotate90() : Vector{
+        return new Vector(-this.y, this.x);
+    }
 }
 
 export class Ray {

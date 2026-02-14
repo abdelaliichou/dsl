@@ -1821,3 +1821,7 @@ let VOID square() {
 }
 ```
 
+Let's assume that 1mm = 1unit of the scene.
+So if the scene is 1000x1000 wide, we have 1m on 1m
+
+
