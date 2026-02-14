@@ -1795,6 +1795,7 @@ So we just do a `statement.accept(this)` and the concerned visitor method will b
 We have to study a bit the concepts of the scene and the entities.
 And complete them at all.
 
-Maybe should we add the Side move to our language ? Not mandatory, but it can be cool.
+**NEXT STEP IS TO ADD THE CONCEPT OF TIMESTAMP IN OUR MOVEMENTS.**
+
 
 
