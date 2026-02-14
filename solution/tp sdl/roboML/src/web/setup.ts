@@ -1,5 +1,5 @@
 import { MonacoLanguageClient } from 'monaco-languageclient';
-import { Scene } from './simulator/scene.js';
+import { BaseScene, Scene } from './simulator/scene.js';
 import { Wall } from './lib/wall.js';
 import { Robot } from './lib/robot.js';
 import p5 from "./lib/sketch.js";
@@ -98,17 +98,40 @@ export function setup(client: MonacoLanguageClient, uri: string) {
     }
 
 
+    client.onNotification("roboml/validate", (payload: any) => {
+        typecheck(payload)
+    });
 
-    // Listen to custom notifications coming from the server, here to call the "test" function
-    client.onNotification('custom/hello', hello);
-    client.onNotification('custom/interpretor', typecheck);
+    client.onNotification("roboml/buildScene", (payload: any) => {
 
+        if (!payload.success) {
+            const modal = document.getElementById("errorModal")!;
+            modal.style.display = "block";
+            return;
+        }
 
-    // Listen to the button click to notify the server to hello the code
-    // win.hello is called in the index.html file, line 13
-    win.hello = () => client.sendNotification('custom/hello');
+        const scene = payload.scene;
+
+        // Clear previous simulation
+        (window as any).entities = [];
+
+        execute(scene);
+    });
+
+    //win.hello = () => client.sendNotification('custom/hello');
     // TODO : to adapt
-    win.interpretor = () => client.sendNotification('custom/interpretor',uri)
-    win.execute = execute;
-    win.typecheck = typecheck;
+    win.validate = () => {
+        client.sendNotification("roboml/validate", uri);
+    };
+
+    win.run = () => {
+        client.sendNotification("roboml/buildScene", uri);
+    }
+
+
+    win.resetSimulation = () => {
+        win.entities = [];
+        win.scene = new BaseScene();
+        win.p5robot = undefined;
+    };
 }

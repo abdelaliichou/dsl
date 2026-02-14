@@ -1781,7 +1781,15 @@ npm run serve
 ### Client / Server
 We have to do a button for the typechecking, for the parsing/validating and then the executing ?
 does the parsing build the scene ? Because it is an interpretor, we can technicaly try to build the scene until we pass throught an error and so we just stop o build the scene but we can return it anyway.
+Ok ok ok, I need to clarify what we want for our client/server communication and roles.
 
+Client: 
+- send the code to the server for analyze.
+- Run the p5 animation
+
+Server:
+- Parse & Build the scene and send it to the client. 
+- That's all ?
 
 ### Visitor
 Now, our goal is to complete the [`interpreter.ts`](./solution/tp%20sdl/roboML/src/semantics/interpreter.ts) script with the visitor generated.
@@ -1823,5 +1831,6 @@ let VOID square() {
 
 Let's assume that 1mm = 1unit of the scene.
 So if the scene is 1000x1000 wide, we have 1m on 1m
+
 
 

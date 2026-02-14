@@ -15,7 +15,7 @@ class Stack<T> implements IStack<T> {
 
     push(item: T): void {
         if (this.size() === this.capacity) {
-            throw Error("Stack has reached max capacity, you cannot add more items");
+            throw Error("Stack has reached max capacity, you cannot add more items"); //APrès c'est infini donc ils abusent en vrai mdr
         }
         this.storage.push(item);
     }
@@ -37,13 +37,23 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
 
     private scene = new BaseScene();
     private functions = new Map<string, MyFunction>();
-    private scopeVariables = new Stack<Map<string, any>>;
+    private scopeVariables = new Stack<Map<string, any>>();
     private currentSpeed:number = 1; 
     private rotationSpeed = Math.PI / 2 //So it's 90° per second
+
+    constructor() {
+        this.scene = new BaseScene();
+        this.functions = new Map();
+        this.scopeVariables = new Stack();
+        this.scopeVariables.push(new Map());
+        this.currentSpeed = 1;
+        this.rotationSpeed = Math.PI / 2; // 90° per second
+    }
 
     visitExpression(node: Expression) {
         node.accept(this); // Auto-dispatch
     }
+    //Maybe we should never pass through Expression and BinaryExpression, right? 
     visitBinaryExpression(node: BinaryExpression) {
         //FIXME: Binary Expression can be Arithmetic or Comparison OR BINARY AGAIN ?
         node.left.accept(this);
@@ -137,8 +147,10 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         throw new Error('Method not implemented.');
     }
     
+
     //ENTRY POINT !!
     visitProgram(node: Program) {
+        console.log("VISITOR IN PROGRAM")
         // Register functions for later calls
         for (var func of node.functions) {
             this.functions.set(func.name || ".", func);

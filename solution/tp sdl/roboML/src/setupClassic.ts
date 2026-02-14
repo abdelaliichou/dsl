@@ -10,7 +10,26 @@ export const setupConfigClassic = (): UserConfig => {
             editorAppConfig: {
                 $type: 'classic',
                 languageId: 'robo-m-language',
-                code: `// roboMLanguage is running in the web!`,
+                // code: `// roboMLanguage is running in the web!`,
+                code: `let VOID entry() {
+    setSpeed(150 in MM_PER_SEC)
+    var NUMBER count = 0
+    loop count LESS 5 {
+        count = count PLUS 1
+        square()
+    }
+}
+
+let VOID square() {
+    FORWARD 30 in CM
+    CLOCK 90
+    FORWARD 300 in MM
+    CLOCK 90
+    FORWARD 30 in CM
+    CLOCK 90
+    FORWARD 30 in CM
+    CLOCK 90
+}`,
                 useDiffEditor: false,
                 languageExtensionConfig: { id: 'langium' },
                 languageDef: monarchSyntax,

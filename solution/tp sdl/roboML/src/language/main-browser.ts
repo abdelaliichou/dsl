@@ -24,23 +24,52 @@ function getModelFromUri(uri: string): Program | undefined {
     return undefined;
 }
 
-connection.onNotification("custom/hello", (uri: string) => connection.sendNotification("custom/hello", "World"));
-connection.onNotification("custom/interpretor", (uri: string) => {
+//connection.onNotification("custom/hello", (uri: string) => connection.sendNotification("custom/hello", "World"));
+
+//For now, it does nothing lol
+connection.onNotification("roboml/validate", (uri: string) => {
     const program = getModelFromUri(uri);
 
     if (!program) {
-        connection.sendNotification("custom/interpretor", {
-            msg:"Program is invalid.",
-            success : false
+        connection.sendNotification("roboml/validate", {
+            success: false,
+            message: "Program contains errors."
         });
         return;
     }
-    const visitor = new InterpretorRoboMLanguageVisitor();
-    const scene = visitor.visitProgram(program)
-    // const result = program.accept(visitor);
 
-    connection.sendNotification("custom/interpretor", {
+    //Here we should validate it. And then on the client side we call the typechecker maybe ?
+    connection.sendNotification("roboml/validate", {
+        success: true
+    });
+});
+
+//
+connection.onNotification("roboml/buildScene", (uri: string) => {
+    const program = getModelFromUri(uri);
+    console.log("Program Received: Start building scene");
+    if (!program) {
+        console.log("No program")
+        connection.sendNotification("roboml/buildScene", {
+            success: false,
+            message: "Program contains errors."
+        });
+        return;
+    }
+
+    const visitor = new InterpretorRoboMLanguageVisitor();
+    const scene = program.accept(visitor);
+
+    // Convert to plain JSON (important!)
+    const sceneDTO = {
+        size: scene.size,
+        entities: scene.entities,
+        robot: scene.robot,
+        timestamps: scene.timestamps
+    };
+
+    connection.sendNotification("roboml/buildScene", {
         success: true,
-        scene
+        scene: sceneDTO
     });
 });
