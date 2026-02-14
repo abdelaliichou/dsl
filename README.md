@@ -1796,6 +1796,28 @@ We have to study a bit the concepts of the scene and the entities.
 And complete them at all.
 
 **NEXT STEP IS TO ADD THE CONCEPT OF TIMESTAMP IN OUR MOVEMENTS.**
+Oupsi, we have to convert degrees to radiant my baaaaaad
 
+Script that should works with our language (adaptation of the first one presented) : 
+```roboML
+let VOID entry() {
+    setSpeed(150 in MM_PER_SEC)
+    var NUMBER count = 0
+    loop count LESS 5 {
+        count = count PLUS 1
+        square()
+    }
+}
 
+let VOID square() {
+    FORWARD 30 in CM
+    CLOCK 90
+    FORWARD 300 in MM
+    CLOCK 90
+    FORWARD 30 in CM
+    CLOCK 90
+    FORWARD 30 in CM
+    CLOCK 90
+}
+```
 

@@ -193,7 +193,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
 
     //FIXME: Implement timestamps with currentSpeed
     visitRotation(node: Rotation) {
-        var angle = node.angle.accept(this)
+        var angle = node.angle.accept(this) * Math.PI / 180 // Normalement c'est bon nan ? J'ai copié ça dans le entities.ts
         var direction = 0;
         switch (node.direction) {
             case 'CLOCK': 1
