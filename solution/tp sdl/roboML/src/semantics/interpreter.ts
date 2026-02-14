@@ -249,7 +249,15 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     }
 
     visitVariableDeclaration(node: VariableDeclaration) {
-        throw new Error('Method not implemented.');
+        var scope = this.scopeVariables.peek()
+        if(scope && node.name){
+            if(scope.get(node.name)){
+                throw new Error('Variable already declared.');
+            } else  {
+                scope.set(node.name, undefined);
+            }
+        }
+        throw new Error('VARIABLE_DECLARATION: Stack or variable name error.');
     }
     
 }
