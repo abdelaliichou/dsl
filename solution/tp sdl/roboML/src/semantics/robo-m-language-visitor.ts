@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 import * as ASTInterfaces from '../language/generated/ast.js';
-import { LangiumCoreServices, Reference, ValidationAcceptor, ValidationChecks } from 'langium';
+import { LangiumCoreServices, ValidationAcceptor, ValidationChecks } from 'langium';
 
 /**
  * This interface is used to define the visitor methods for the RoboMLanguage language.

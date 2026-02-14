@@ -33,29 +33,52 @@ export function setup(client: MonacoLanguageClient, uri: string) {
         }
     } 
 
-
-    const hello = (async (person: string) => {
-        console.log(`Hello ${person}!`)
-    });
-
-    const typecheck = (async (input: any) => {
-        console.info('typechecking current code...');
-        //For now just input.error, but after that, Error should analyse typecheck errors.
-        const errors: any[] = [];
-
-        // BONUS : Implement new semantics for typechecking
-        
-        if(errors.length > 0){
-            const modal = document.getElementById("errorModal")! as HTMLElement;
-            
+    const typecheck = (async (payload: any) => {
+        console.info('Validation result:', payload);
+    
+        if (payload.success) {
+            // Show success modal
+            const modal = document.getElementById("validModal")! as HTMLElement;
+            const message = modal.querySelector("p");
+            if (message) {
+                message.textContent = payload.message || "✓ Program is valid!";
+            }
             modal.style.display = "block";
         } else {
-            const modal = document.getElementById("validModal")! as HTMLElement;
+            // Show error modal
+            const modal = document.getElementById("errorModal")! as HTMLElement;
+            const message = modal.querySelector("p");
+            
+            if (payload.errors && payload.errors.length > 0) {
+                // Show detailed errors
+                let errorText = "Validation Errors:\n\n";
+                payload.errors.forEach((err: any, index: number) => {
+                    errorText += `${index + 1}. Line ${err.range?.start?.line + 1}: ${err.message}\n`;
+                });
+                if (message) {
+                    message.textContent = errorText;
+                    message.style.whiteSpace = "pre-wrap";
+                }
+            } else {
+                if (message) {
+                    message.textContent = payload.message || "Program contains errors.";
+                }
+            }
+            
             modal.style.display = "block";
         }
     });
 
     const execute = (async (scene: Scene) => {
+        console.log("=== SCENE RECEIVED ===");
+        console.log("Scene:", scene);
+        console.log("Timestamps:", scene.timestamps.length);
+        console.log("Robot position:", scene.robot.pos);
+        
+        // Reset animation state
+        (window as any).time = 0;
+        (window as any).lastTimestamp = 0;
+        
         setupSimulator(scene);
     });
 
@@ -103,14 +126,26 @@ export function setup(client: MonacoLanguageClient, uri: string) {
     });
 
     client.onNotification("roboml/buildScene", (payload: any) => {
+        console.log("=== BUILD SCENE RESPONSE ===");
+        console.log("Payload:", payload);
 
         if (!payload.success) {
+            console.error("Scene build failed:", payload.message);
+            console.error("Stack:", payload.stack);
+            
             const modal = document.getElementById("errorModal")!;
+            const errorText = modal.querySelector("p");
+            if (errorText) {
+                errorText.textContent = `Error: ${payload.message || "Unknown error"}`;
+            }
             modal.style.display = "block";
             return;
         }
 
+        console.log("Scene received successfully!");
         const scene = payload.scene;
+        console.log("Scene data:", scene);
+        console.log("Timestamps:", scene.timestamps?.length);
 
         // Clear previous simulation
         (window as any).entities = [];
@@ -118,8 +153,6 @@ export function setup(client: MonacoLanguageClient, uri: string) {
         execute(scene);
     });
 
-    //win.hello = () => client.sendNotification('custom/hello');
-    // TODO : to adapt
     win.validate = () => {
         client.sendNotification("roboml/validate", uri);
     };

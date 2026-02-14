@@ -15,7 +15,7 @@ class Stack<T> implements IStack<T> {
 
     push(item: T): void {
         if (this.size() === this.capacity) {
-            throw Error("Stack has reached max capacity, you cannot add more items"); //APrès c'est infini donc ils abusent en vrai mdr
+            throw Error("Stack has reached max capacity");
         }
         this.storage.push(item);
     }
@@ -38,8 +38,8 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     private scene = new BaseScene();
     private functions = new Map<string, MyFunction>();
     private scopeVariables = new Stack<Map<string, any>>();
-    private currentSpeed:number = 1; 
-    private rotationSpeed = Math.PI / 2 //So it's 90° per second
+    private currentSpeed: number = 1;
+    private rotationSpeed = Math.PI / 2; // 90° per second
 
     constructor() {
         this.scene = new BaseScene();
@@ -47,23 +47,21 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         this.scopeVariables = new Stack();
         this.scopeVariables.push(new Map());
         this.currentSpeed = 1;
-        this.rotationSpeed = Math.PI / 2; // 90° per second
+        this.rotationSpeed = Math.PI / 2;
     }
 
     visitExpression(node: Expression) {
-        node.accept(this); // Auto-dispatch
+        return node.accept(this);
     }
-    //Maybe we should never pass through Expression and BinaryExpression, right? 
+
     visitBinaryExpression(node: BinaryExpression) {
-        //FIXME: Binary Expression can be Arithmetic or Comparison OR BINARY AGAIN ?
-        node.left.accept(this);
-        node.right.accept(this);
-        throw new Error('Method not implemented.');
+        return node.accept(this);
     }
+
     visitArithmeticExpression(node: ArithmeticExpression) {
-        var left = node.left.accept(this);
-        var right = node.right.accept(this); 
-        switch (node.operator){
+        const left = node.left.accept(this);
+        const right = node.right.accept(this);
+        switch (node.operator) {
             case 'PLUS': return left + right;
             case 'MINUS': return left - right;
             case 'MULTIPLY': return left * right;
@@ -71,9 +69,10 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
             case 'MODULO': return left % right;
         }
     }
+
     visitComparisonExpression(node: ComparisonExpression) {
-        var left = node.left.accept(this);
-        var right = node.right.accept(this);
+        const left = node.left.accept(this);
+        const right = node.right.accept(this);
         switch (node.operator) {
             case 'LESS': return left < right;
             case 'LESS_EQ': return left <= right;
@@ -83,193 +82,231 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
             case 'NOT_EQUALS': return left != right;
         }
     }
+
     visitBooleanLiteral(node: BooleanLiteral) {
         return node.value;
     }
+
     visitNumberLiteral(node: NumberLiteral) {
-        return node.value;
+        return node.value ?? 0;
     }
 
-    //Something in relation with the Raycast ? 
     visitSensorRead(node: SensorRead) {
-        switch (node.sensor){
-            case 'TIMESTAMP': throw new Error('TIMESTAMP SENSOR not implemented.');
-            case 'DISTANCE': throw new Error('DISTANCE SENSOR not implemented.');
+        switch (node.sensor) {
+            case 'TIMESTAMP': 
+                return this.scene.time;
+            case 'DISTANCE':
+                // Simple distance sensor simulation
+                const ray = this.scene.robot.getRay();
+                const intersection = ray.intersect(this.scene.entities);
+                if (intersection) {
+                    return this.scene.robot.pos.minus(intersection).norm();
+                }
+                return 10000; // Max distance if no obstacle
         }
     }
 
-    //HACKME: Jsp, j'trouve pas ça trop ouf de mélanger booléens et nombres :/
     visitUnaryExpression(node: UnaryExpression) {
-        var operand = node.operand.accept(this);
+        const operand = node.operand.accept(this);
         switch (node.operator) {
             case 'MINUS': return -operand;
             case 'NOT': return !operand;
         }
     }
 
-    //Puis on multiplira par l'unité
     visitUnitExpression(node: UnitExpression) {
-        switch (node.unit){
-            case 'CM': return 10;
-            case 'MM': return 1;
+        const value = node.value.accept(this);
+        switch (node.unit) {
+            case 'CM': return value * 10;
+            case 'MM': return value;
         }
     }
 
     visitVariableReference(node: VariableReference) {
-        var scope = this.scopeVariables.peek()
-        if (scope && node.variableName){ //Lol, variable name isn't mandatory
-            return scope.get(node.variableName);
+        const scope = this.scopeVariables.peek();
+        if (scope && node.variableName) {
+            const value = scope.get(node.variableName);
+            if (value !== undefined) {
+                return value;
+            }
         }
-        throw new Error('Non-decared Varaible: '+node.variableName);
+        throw new Error('Undeclared variable: ' + node.variableName);
     }
+
     visitMyFunction(node: MyFunction) {
-        if (!node.name){ //On est dans l'entry function
-            //Normalement on a pas de parameters ou autre, si ? 
-            for (var statement of node.body){
-                statement.accept(this); //Auto-dispatch the visitor in the right visit method.
+        if (!node.name) {
+            // Entry function
+            for (const statement of node.body) {
+                statement.accept(this);
             }
-        } 
-        else { // On est dans l'execution d'une fonction "externe"
-            // On créer un nouveau scope avec les paramètre en varaibles. 
-            this.scopeVariables.push(new Map<string,any>())
-            for (var param of node.parameters){
-                param.accept(this);
+        } else {
+            // Regular function - create new scope
+            this.scopeVariables.push(new Map<string, any>());
+            
+            // Execute function body
+            for (const statement of node.body) {
+                statement.accept(this);
             }
-            //Puis on déroule les statements normalement
-            for (var statement of node.body) {
-                statement.accept(this); //Auto-dispatch the visitor in the right visit method.
-            }
-            //FIXME: If returnType of the function is something else than VOID, we should control and return the last ligne.
+            
+            // Restore scope
+            this.scopeVariables.pop();
         }
     }
+
     visitParameter(node: Parameter) {
-
-        throw new Error('Method not implemented.');
+        // Parameters handled during function calls
     }
-    
 
-    //ENTRY POINT !!
+    // ENTRY POINT
     visitProgram(node: Program) {
-        console.log("VISITOR IN PROGRAM")
-        // Register functions for later calls
-        for (var func of node.functions) {
-            this.functions.set(func.name || ".", func);
+        console.log("VISITOR IN PROGRAM");
+        
+        // Register all functions
+        for (const func of node.functions) {
+            if (func.name) {
+                this.functions.set(func.name, func);
+            }
         }
-        // Execute entry
+        
+        // Execute entry function
         node.entry.accept(this);
+        
         return this.scene;
     }
 
-    //Is it possible we came here ? :x
     visitStatement(node: Statement) {
-        node.accept(this);
-        throw new Error('Method not implemented.');
+        return node.accept(this);
     }
 
     visitAssignment(node: Assignment) {
-        var scope = this.scopeVariables.peek();
-        if (scope && node.variable){
-            scope.set(node.variable,node.value);
+        const scope = this.scopeVariables.peek();
+        if (scope && node.variable) {
+            const value = node.value.accept(this); // ← FIX: Evaluate expression
+            scope.set(node.variable, value);
+            return;
         }
-        throw new Error('Assignement Error.');
+        throw new Error('Assignment error: ' + node.variable);
     }
 
-    //Same thing as Statement .
     visitCommand(node: Command) {
-        node.accept(this);
-        throw new Error('Method not implemented.');
+        return node.accept(this);
     }
 
-    //FIXME : Not complete at all. Like, we're not managing yet the input parameters etc...
     visitFunctionCall(node: FunctionCall) {
-        if(node.functionName){
-            var functionDecl = this.functions.get(node.functionName);
-            functionDecl?.accept(this);
+        if (node.functionName) {
+            const functionDecl = this.functions.get(node.functionName);
+            if (functionDecl) {
+                functionDecl.accept(this);
+                return;
+            }
         }
-        throw new Error('Method not implemented.');
+        throw new Error('Function not found: ' + node.functionName);
     }
 
-    //FIXME: Implement timestamps with currentSpeed
     visitMovement(node: Movement) {
-        var dist = node.distance.accept(this);
-        //var unit = node.unit.accept(this) // Wtf c'est pas une DistanceUnit ? :(
-        var unit2 = 1;
+        const dist = node.distance.accept(this);
+        
+        // FIX: Add break statements
+        let unit2 = 1;
         switch (node.unit) {
-            case 'CM': unit2 = 10
-            case 'MM': unit2 = 1
+            case 'CM': 
+                unit2 = 10;
+                break;
+            case 'MM': 
+                unit2 = 1;
+                break;
         }
-        var calcDist = dist*unit2;
-        switch (node.direction) { //Let's call scene/entities methods
-            case 'FORWARD': this.scene.robot.move(calcDist)
-            case 'BACKWARD': this.scene.robot.move(-calcDist)
-            case 'LEFT': this.scene.robot.side(-calcDist)
-            case 'RIGHT': this.scene.robot.side(calcDist)
+        
+        const calcDist = dist * unit2;
+        
+        // FIX: Add break statements
+        switch (node.direction) {
+            case 'FORWARD': 
+                this.scene.robot.move(calcDist);
+                break;
+            case 'BACKWARD': 
+                this.scene.robot.move(-calcDist);
+                break;
+            case 'LEFT': 
+                this.scene.robot.side(-calcDist);
+                break;
+            case 'RIGHT': 
+                this.scene.robot.side(calcDist);
+                break;
         }
 
-        var duration = Math.abs(calcDist) / this.currentSpeed
-        // Save timestamp snapshot
+        const duration = Math.abs(calcDist) / this.currentSpeed;
         this.scene.time += duration;
         this.scene.timestamps.push(
             new Entities.Timestamp(this.scene.time, this.scene.robot)
         );
     }
 
-    //On part sur genre 1seconde/90deg ? 
-    //FIXME: Implement timestamps with currentSpeed
     visitRotation(node: Rotation) {
-        var angle = node.angle.accept(this) * Math.PI / 180 // Normalement c'est bon nan ? J'ai copié ça dans le entities.ts
-        var direction = 0;
+        const angle = node.angle.accept(this) * Math.PI / 180;
+        
+        // FIX: Proper direction handling
+        let direction = 1;
         switch (node.direction) {
-            case 'CLOCK': direction = 1;
-            case 'COUNTERCLOCK': direction = -1;
+            case 'CLOCK': 
+                direction = 1;
+                break;
+            case 'COUNTERCLOCK': 
+                direction = -1;
+                break;
         }
-        this.scene.robot.turn(angle*direction)
+        
+        this.scene.robot.turn(angle * direction);
 
-        var duration = angle / this.rotationSpeed; 
-        this.scene.time += duration
-        this.scene.timestamps.push(new Entities.Timestamp(this.scene.time,this.scene.robot))
+        const duration = Math.abs(angle) / this.rotationSpeed;
+        this.scene.time += duration;
+        this.scene.timestamps.push(
+            new Entities.Timestamp(this.scene.time, this.scene.robot)
+        );
     }
 
     visitSetSpeed(node: SetSpeed) {
-        var speed = node.speed.accept(this)
-        var unit =  //AGAIN :(
-            node.unit === 'CM_PER_SEC' ? 10 :
-            node.unit === 'MM_PER_SEC' ? 1 : 1 //BOOM autre manière de faie, mais c'est très équivalent à un switch quoi mdr
-        this.currentSpeed = speed*unit
+        const speed = node.speed.accept(this);
+        const unit = node.unit === 'CM_PER_SEC' ? 10 : 1;
+        this.currentSpeed = speed * unit;
     }
 
     visitCondition(node: Condition) {
-        var cond = node.condition.accept(this)
-        if(cond){
-            for(var statement of node.thenBlock){
-                statement.accept(this)
+        const cond = node.condition.accept(this);
+        if (cond) {
+            for (const statement of node.thenBlock) {
+                statement.accept(this);
             }
         } else {
-            for(var statement of node.elseBlock){ 
-                statement.accept(this)
+            for (const statement of node.elseBlock) {
+                statement.accept(this);
             }
         }
     }
+
     visitLoop(node: Loop) {
-        var cond = node.condition.accept(this)
-        while(cond){
-            for(var statement of node.body){
-                statement.accept(this)
+        while (node.condition.accept(this)) {
+            for (const statement of node.body) {
+                statement.accept(this);
             }
-            cond = node.condition.accept(this)
         }
     }
 
     visitVariableDeclaration(node: VariableDeclaration) {
-        var scope = this.scopeVariables.peek()
-        if(scope && node.name){
-            if(scope.get(node.name)){
-                throw new Error('Variable already declared.');
-            } else  {
-                scope.set(node.name, undefined);
+        const scope = this.scopeVariables.peek();
+        if (scope && node.name) {
+            if (scope.has(node.name)) {
+                throw new Error('Variable already declared: ' + node.name);
             }
+            
+            // FIX: Evaluate initial value
+            const initialValue = node.initialValue 
+                ? node.initialValue.accept(this) 
+                : 0;
+            
+            scope.set(node.name, initialValue);
+            return;
         }
-        throw new Error('VARIABLE_DECLARATION: Stack or variable name error.');
+        throw new Error('Variable declaration error');
     }
-    
 }

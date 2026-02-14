@@ -11,8 +11,9 @@ export const setupConfigClassic = (): UserConfig => {
                 $type: 'classic',
                 languageId: 'robo-m-language',
                 // code: `// roboMLanguage is running in the web!`,
-                code: `let VOID entry() {
-    setSpeed(150 in MM_PER_SEC)
+                code: `
+let VOID entry1() {
+    setSpeed(550 in MM_PER_SEC)
     var NUMBER count = 0
     loop count LESS 5 {
         count = count PLUS 1
@@ -29,6 +30,49 @@ let VOID square() {
     CLOCK 90
     FORWARD 30 in CM
     CLOCK 90
+}
+
+let VOID entry2() {
+    setSpeed(300 in MM_PER_SEC)  
+    var NUMBER dist = 100
+    
+    if dist GREATER 50 {
+        FORWARD 50 in CM
+        CLOCK 90
+        FORWARD 50 in CM
+    } else {
+        BACKWARD 30 in CM
+        CLOCK 180
+    }
+}
+
+let VOID entry() {
+    setSpeed(400 in MM_PER_SEC)
+    
+    var NUMBER side = 30
+    var NUMBER turns = 0
+    
+    loop turns LESS 4 {
+        if side GREATER 25 {
+            FORWARD side in CM
+        } else {
+            FORWARD 10 in CM
+        }
+        
+        CLOCK 90
+        turns = turns PLUS 1
+        side = side PLUS 5
+    }
+    
+    celebrationDance()
+}
+
+let VOID celebrationDance() {
+    var NUMBER spins = 0
+    loop spins LESS 3 {
+        CLOCK 360
+        spins = spins PLUS 1
+    }
 }`,
                 useDiffEditor: false,
                 languageExtensionConfig: { id: 'langium' },

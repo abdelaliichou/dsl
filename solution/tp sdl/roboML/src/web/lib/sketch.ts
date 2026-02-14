@@ -18,19 +18,40 @@ const sketch = (p: P5) => {
 
     p.draw = () => {
         p.background(0);
+        
+        // DEBUG INFO
+        if (win.scene) {
+            p.fill(255);
+            p.noStroke();
+            p.textSize(14);
+            p.text(`Timestamps: ${win.scene.timestamps.length}`, 10, 20);
+            p.text(`Current Time: ${win.time.toFixed(2)}`, 10, 40);
+            p.text(`Last Timestamp: ${win.lastTimestamp}`, 10, 60);
+            
+            // Show if animation is playing
+            if (win.lastTimestamp < win.scene.timestamps.length - 1) {
+                p.text(`ANIMATING`, 10, 80);
+            } else {
+                p.text(`FINISHED`, 10, 80);
+            }
+        }
+        
         p.stroke(255);
         p.strokeWeight(1);
 
-        for (var e = 0; e < win.entities.length; e++) {
+        // Draw walls/entities
+        for (let e = 0; e < win.entities.length; e++) {
             (win.entities[e] as unknown as Wall).show();
         }
 
-        if (win.scene !== null && win.scene && win.scene.timestamps.length > win.lastTimestamp + 1) {
-            win.time += win.deltaTime
+        // Update robot position if animation is running
+        if (win.scene && win.scene.timestamps.length > win.lastTimestamp + 1) {
+            win.time += p.deltaTime; // deltaTime is in milliseconds
             updateRobot(p);
         }
 
-        if (win.p5robot !== null) {
+        // Draw robot
+        if (win.p5robot) {
             win.p5robot.show();
         }
     };
@@ -38,18 +59,25 @@ const sketch = (p: P5) => {
 
 const p5 = new P5(sketch);
 
-
-
 function updateRobot(p: P5) {
-    const lastKnownState = win.scene!.timestamps[win.lastTimestamp];
-    const nextKnownState = win.scene!.timestamps[win.lastTimestamp + 1];
+    if (!win.scene) return;
+    
+    const lastKnownState = win.scene.timestamps[win.lastTimestamp];
+    const nextKnownState = win.scene.timestamps[win.lastTimestamp + 1];
 
-    win.p5robot.x = p.map(win.time, lastKnownState.time, nextKnownState.time, lastKnownState.pos.x, nextKnownState.pos.x, true)
-    win.p5robot.y = p.map(win.time, lastKnownState.time, nextKnownState.time, lastKnownState.pos.y, nextKnownState.pos.y, true)
-    win.p5robot.angle = p.map(win.time, lastKnownState.time, nextKnownState.time, lastKnownState.rad, nextKnownState.rad, true)
+    // Convert time from seconds to milliseconds for interpolation
+    const lastTime = lastKnownState.time * 1000;
+    const nextTime = nextKnownState.time * 1000;
+    const currentTime = win.time;
 
-    if (win.time >= nextKnownState.time) {
-        win.time = nextKnownState.time;
+    // Interpolate position and angle
+    win.p5robot.x = p.map(currentTime, lastTime, nextTime, lastKnownState.pos.x, nextKnownState.pos.x, true);
+    win.p5robot.y = p.map(currentTime, lastTime, nextTime, lastKnownState.pos.y, nextKnownState.pos.y, true);
+    win.p5robot.angle = p.map(currentTime, lastTime, nextTime, lastKnownState.rad, nextKnownState.rad, true);
+
+    // Move to next timestamp when current time exceeds it
+    if (currentTime >= nextTime) {
+        win.time = nextTime;
         win.lastTimestamp++;
     }
 }
@@ -59,7 +87,7 @@ function resetSimulation() {
     win.lastTimestamp = 0;
 }
 
-win.setup = p5.setup
-win.resetSimulation = resetSimulation
+win.setup = p5.setup;
+win.resetSimulation = resetSimulation;
 
 export default p5;

@@ -24,52 +24,107 @@ function getModelFromUri(uri: string): Program | undefined {
     return undefined;
 }
 
-//connection.onNotification("custom/hello", (uri: string) => connection.sendNotification("custom/hello", "World"));
-
-//For now, it does nothing lol
 connection.onNotification("roboml/validate", (uri: string) => {
-    const program = getModelFromUri(uri);
+     try {
+        const document = shared.workspace.LangiumDocuments.getDocument(URI.parse(uri));
+        
+        if (!document) {
+            connection.sendNotification("roboml/validate", {
+                success: false,
+                message: "Document not found."
+            });
+            return;
+        }
 
-    if (!program) {
+        // Check for syntax errors (parsing errors)
+        const syntaxErrors = document.diagnostics?.filter((d) => d.severity === 1) || [];
+        
+        if (syntaxErrors.length > 0) {
+            connection.sendNotification("roboml/validate", {
+                success: false,
+                errors: syntaxErrors.map((d: { message: any; range: any; }) => ({
+                    message: d.message,
+                    range: d.range
+                }))
+            });
+            return;
+        }
+
+        // If no syntax errors, validation passed
+        connection.sendNotification("roboml/validate", {
+            success: true,
+            message: "Program is valid!"
+        });
+        
+    } catch (error) {
+        console.error("ERROR during validation:", error);
         connection.sendNotification("roboml/validate", {
             success: false,
-            message: "Program contains errors."
+            message: error instanceof Error ? error.message : String(error)
         });
-        return;
     }
-
-    //Here we should validate it. And then on the client side we call the typechecker maybe ?
-    connection.sendNotification("roboml/validate", {
-        success: true
-    });
 });
 
-//
 connection.onNotification("roboml/buildScene", (uri: string) => {
-    const program = getModelFromUri(uri);
-    console.log("Program Received: Start building scene");
-    if (!program) {
-        console.log("No program")
-        connection.sendNotification("roboml/buildScene", {
-            success: false,
-            message: "Program contains errors."
-        });
-        return;
-    }
+    try {
+            const program = getModelFromUri(uri);
+            
+            if (!program) {
+                console.log("No program found");
+                connection.sendNotification("roboml/buildScene", {
+                    success: false,
+                    message: "Program contains errors."
+                });
+                return;
+            }
 
-    const visitor = new InterpretorRoboMLanguageVisitor();
-    const scene = program.accept(visitor);
+            console.log("Program found, creating visitor...");
+            const visitor = new InterpretorRoboMLanguageVisitor();
+            
+            console.log("Visitor created, accepting program...");
+            const scene = program.accept(visitor);
+            
+            console.log("Scene built successfully:", scene);
+            console.log("Timestamps count:", scene.timestamps.length);
 
-    // Convert to plain JSON (important!)
-    const sceneDTO = {
-        size: scene.size,
-        entities: scene.entities,
-        robot: scene.robot,
-        timestamps: scene.timestamps
-    };
+            // Convert to plain JSON
+            const sceneDTO = {
+                size: { x: scene.size.x, y: scene.size.y },
+                entities: scene.entities.map((e: { type: any; pos: { x: any; y: any; }; size: { x: any; y: any; }; }) => ({
+                    type: e.type,
+                    pos: { x: e.pos.x, y: e.pos.y },
+                    size: { x: e.size.x, y: e.size.y }
+                })),
+                robot: {
+                    pos: { x: scene.robot.pos.x, y: scene.robot.pos.y },
+                    size: { x: scene.robot.size.x, y: scene.robot.size.y },
+                    rad: scene.robot.rad,
+                    speed: scene.robot.speed,
+                    type: scene.robot.type
+                },
+                time: scene.time,
+                timestamps: scene.timestamps.map((t: { time: any; pos: { x: any; y: any; }; rad: any; size: { x: any; y: any; }; speed: any; }) => ({
+                    time: t.time,
+                    pos: { x: t.pos.x, y: t.pos.y },
+                    rad: t.rad,
+                    size: { x: t.size.x, y: t.size.y },
+                    speed: t.speed
+                }))
+            };
 
-    connection.sendNotification("roboml/buildScene", {
-        success: true,
-        scene: sceneDTO
-    });
-});
+            console.log("Sending scene to client...");
+            connection.sendNotification("roboml/buildScene", {
+                success: true,
+                scene: sceneDTO
+            });
+            console.log("Scene sent!");
+            
+        } catch (error) {
+            console.error("ERROR building scene:", error);
+            connection.sendNotification("roboml/buildScene", {
+                success: false,
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        }
+    }); 

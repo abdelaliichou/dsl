@@ -1,7 +1,8 @@
-import { type Module, inject } from 'langium';
+import { inject, type Module } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
 import { RoboMLanguageGeneratedModule, RoboMLanguageGeneratedSharedModule } from './generated/module.js';
 import { RoboMLanguageValidator, registerValidationChecks } from './robo-m-language-validator.js';
+import { RoboMLanguageAcceptWeaver } from '../semantics/robo-m-language-accept-weaver.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -64,5 +65,8 @@ export function createRoboMLanguageServices(context: DefaultSharedModuleContext)
         // Therefore, initialize the configuration provider instantly
         shared.workspace.ConfigurationProvider.initialized({});
     }
+Timestamps: 41
+    new RoboMLanguageAcceptWeaver(RoboMLanguage);
+
     return { shared, RoboMLanguage };
 }
