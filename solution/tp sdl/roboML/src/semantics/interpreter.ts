@@ -41,9 +41,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     private currentSpeed: number = 1;
     private rotationSpeed = Math.PI / 2; // 90° per second
 
-    // ← AJOUTE CES LIGNES
-    private loopIterations = 0;
-    private readonly MAX_LOOP_ITERATIONS = 10000; // To prevent infinite loops
+    private readonly YIELD_EVERY_N_ITERATIONS = 100;
 
     constructor() {
         this.scene = new BaseScene();
@@ -52,7 +50,6 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         this.scopeVariables.push(new Map());
         this.currentSpeed = 1;
         this.rotationSpeed = Math.PI / 2;
-         this.loopIterations = 0;
     }
 
     visitExpression(node: Expression) {
@@ -138,11 +135,11 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         throw new Error('Undeclared variable: ' + node.variableName);
     }
 
-    visitMyFunction(node: MyFunction) {
+    async visitMyFunction(node: MyFunction) {
         if (!node.name) {
             // Entry function - no parameters, just execute
             for (const statement of node.body) {
-                statement.accept(this);
+                await statement.accept(this);
             }
         } else {
             // Regular function - scope and parameters handled by FunctionCall
@@ -156,7 +153,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     }
 
     // ENTRY POINT
-    visitProgram(node: Program) {
+    async visitProgram(node: Program) {
         console.log("VISITOR IN PROGRAM");
         
         // Register all functions
@@ -167,13 +164,13 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         }
         
         // Execute entry function
-        node.entry.accept(this);
+        await node.entry.accept(this);
         
         return this.scene;
     }
 
-    visitStatement(node: Statement) {
-        return node.accept(this);
+    async visitStatement(node: Statement) {
+        return await node.accept(this);
     }
 
     visitAssignment(node: Assignment) {
@@ -186,11 +183,11 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         throw new Error('Assignment error: ' + node.variable);
     }
 
-    visitCommand(node: Command) {
-        return node.accept(this);
+    async visitCommand(node: Command) {
+        return await node.accept(this);
     }
 
-    visitFunctionCall(node: FunctionCall) {
+    async visitFunctionCall(node: FunctionCall) {
         if (node.functionName) {
             const functionDecl = this.functions.get(node.functionName);
             if (functionDecl) {
@@ -219,7 +216,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
                 
                 // Execute function body
                 for (const statement of functionDecl.body) {
-                    statement.accept(this);
+                   await statement.accept(this);
                 }
                 
                 // Restore previous scope
@@ -233,7 +230,6 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     visitMovement(node: Movement) {
         const dist = node.distance.accept(this);
         
-        // FIX: Add break statements
         let unit2 = 1;
         switch (node.unit) {
             case 'CM': 
@@ -298,45 +294,98 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         this.currentSpeed = speed * unit;
     }
 
-    visitCondition(node: Condition) {
+    async visitCondition(node: Condition) {
         const cond = node.condition.accept(this);
         if (cond) {
             for (const statement of node.thenBlock) {
-                statement.accept(this);
+                await statement.accept(this);
             }
         } else {
             for (const statement of node.elseBlock) {
-                statement.accept(this);
+                await statement.accept(this);
             }
         }
     }
 
-    visitLoop(node: Loop) {
-        // Reset iteration counter for this specific loop
-        this.loopIterations = 0;
+    /*
+    async visitLoop(node: Loop) {
+
+        let iterationCount = 0;
         
-        // Evaluate condition
-        let conditionResult = node.condition.accept(this);
-        
-        while (conditionResult) {
+        while ( node.condition.accept(this)) {
             // Increment and check iteration limit
-            this.loopIterations++;
-            
-            if (this.loopIterations > this.MAX_LOOP_ITERATIONS) {
-                throw new Error(
-                    `Loop exceeded maximum iterations (${this.MAX_LOOP_ITERATIONS}). ` +
-                    `Possible infinite loop detected. Check your loop condition.`
-                );
-            }
+            iterationCount++;
             
             // Execute loop body
             for (const statement of node.body) {
-                statement.accept(this);
+                await statement.accept(this);  // ← AWAIT
+            }
+
+            // ← CLEF: Yield control to browser every N iterations
+            if (iterationCount % this.YIELD_EVERY_N_ITERATIONS === 0) {
+                // Let browser breathe (repaint, handle events, etc.)
+                await new Promise(resolve => setTimeout(resolve, 0));
+                
+                // Optional: Log progress for very long loops
+                if (iterationCount % 10000 === 0) {
+                    console.log(`Loop iteration: ${iterationCount}`);
+                }
+            }
+        }
+
+        console.log(`✅ Loop completed after ${iterationCount} iterations`);
+    }
+        */
+
+    // ← ASYNC - NON-BLOCKING LOOPS WITH PRACTICAL LIMITS
+    async visitLoop(node: Loop) {
+        let iterationCount = 0;
+        
+        // Practical limits to prevent infinite execution
+        const MAX_TIMESTAMPS = 50000;        // Enough for long animations
+        const MAX_EXECUTION_TIME_MS = 30000; // 30 seconds max
+        const startTime = Date.now();
+        
+        while (node.condition.accept(this)) {
+            iterationCount++;
+            
+            // Execute loop body
+            for (const statement of node.body) {
+                await statement.accept(this);
             }
             
-            // Re-evaluate condition (important!)
-            conditionResult = node.condition.accept(this);
+            // Yield control to browser every N iterations
+            if (iterationCount % this.YIELD_EVERY_N_ITERATIONS === 0) {
+                // Let browser breathe
+                await new Promise(resolve => setTimeout(resolve, 0));
+                
+                // Check if we should stop to allow visualization
+                const elapsedTime = Date.now() - startTime;
+                const timestampCount = this.scene.timestamps.length;
+                
+                // Stop if we have enough data for visualization
+                if (timestampCount >= MAX_TIMESTAMPS) {
+                    console.log(`📊 Reached timestamp limit (${MAX_TIMESTAMPS}). Scene ready for visualization.`);
+                    console.log(`   Loop executed ${iterationCount} iterations in ${elapsedTime}ms`);
+                    break;
+                }
+                
+                // Stop if execution takes too long
+                if (elapsedTime > MAX_EXECUTION_TIME_MS) {
+                    console.log(`⏱️ Execution time limit reached (${MAX_EXECUTION_TIME_MS}ms)`);
+                    console.log(`   Loop executed ${iterationCount} iterations, created ${timestampCount} timestamps`);
+                    break;
+                }
+                
+                // Progress logging
+                if (iterationCount % 10000 === 0) {
+                    console.log(`Progress: ${iterationCount} iterations, ${timestampCount} timestamps, ${(elapsedTime/1000).toFixed(1)}s`);
+                }
+            }
         }
+        
+        const finalTime = Date.now() - startTime;
+        console.log(`✅ Loop completed: ${iterationCount} iterations, ${this.scene.timestamps.length} timestamps, ${(finalTime/1000).toFixed(1)}s`);
     }
 
     visitVariableDeclaration(node: VariableDeclaration) {

@@ -65,7 +65,7 @@ connection.onNotification("roboml/validate", (uri: string) => {
     }
 });
 
-connection.onNotification("roboml/buildScene", (uri: string) => {
+connection.onNotification("roboml/buildScene", async (uri: string) => {
     try {
             const program = getModelFromUri(uri);
             
@@ -82,7 +82,7 @@ connection.onNotification("roboml/buildScene", (uri: string) => {
             const visitor = new InterpretorRoboMLanguageVisitor();
             
             console.log("Visitor created, accepting program...");
-            const scene = program.accept(visitor);
+            const scene = await program.accept(visitor);
             
             console.log("Scene built successfully:", scene);
             console.log("Timestamps count:", scene.timestamps.length);
