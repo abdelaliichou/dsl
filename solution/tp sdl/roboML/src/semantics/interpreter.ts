@@ -41,6 +41,10 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     private currentSpeed: number = 1;
     private rotationSpeed = Math.PI / 2; // 90° per second
 
+    // ← AJOUTE CES LIGNES
+    private loopIterations = 0;
+    private readonly MAX_LOOP_ITERATIONS = 10000; // To prevent infinite loops
+
     constructor() {
         this.scene = new BaseScene();
         this.functions = new Map();
@@ -48,6 +52,7 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         this.scopeVariables.push(new Map());
         this.currentSpeed = 1;
         this.rotationSpeed = Math.PI / 2;
+         this.loopIterations = 0;
     }
 
     visitExpression(node: Expression) {
@@ -135,21 +140,14 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
 
     visitMyFunction(node: MyFunction) {
         if (!node.name) {
-            // Entry function
+            // Entry function - no parameters, just execute
             for (const statement of node.body) {
                 statement.accept(this);
             }
         } else {
-            // Regular function - create new scope
-            this.scopeVariables.push(new Map<string, any>());
-            
-            // Execute function body
-            for (const statement of node.body) {
-                statement.accept(this);
-            }
-            
-            // Restore scope
-            this.scopeVariables.pop();
+            // Regular function - scope and parameters handled by FunctionCall
+            // This should NOT be called directly for regular functions anymore
+            throw new Error('Regular functions should be called via FunctionCall');
         }
     }
 
@@ -196,7 +194,36 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
         if (node.functionName) {
             const functionDecl = this.functions.get(node.functionName);
             if (functionDecl) {
-                functionDecl.accept(this);
+                
+                // CRITICAL: Evaluate arguments in CURRENT scope BEFORE creating new scope
+                const evaluatedArgs: any[] = [];
+                for (let i = 0; i < node.arguments.length; i++) {
+                    const arg = node.arguments[i];
+                    if (arg) {
+                        // This evaluation happens in the current scope
+                        // where parameter names from parent call are still visible
+                        evaluatedArgs.push(arg.accept(this));
+                    }
+                }
+                
+                // Now create new scope for the function
+                this.scopeVariables.push(new Map<string, any>());
+                
+                // Bind evaluated arguments to parameters in new scope
+                for (let i = 0; i < functionDecl.parameters.length; i++) {
+                    const param = functionDecl.parameters[i];
+                    if (param.name && i < evaluatedArgs.length) {
+                        this.scopeVariables.peek()?.set(param.name, evaluatedArgs[i]);
+                    }
+                }
+                
+                // Execute function body
+                for (const statement of functionDecl.body) {
+                    statement.accept(this);
+                }
+                
+                // Restore previous scope
+                this.scopeVariables.pop();
                 return;
             }
         }
@@ -285,10 +312,30 @@ export class InterpretorRoboMLanguageVisitor implements RoboMLanguageVisitor {
     }
 
     visitLoop(node: Loop) {
-        while (node.condition.accept(this)) {
+        // Reset iteration counter for this specific loop
+        this.loopIterations = 0;
+        
+        // Evaluate condition
+        let conditionResult = node.condition.accept(this);
+        
+        while (conditionResult) {
+            // Increment and check iteration limit
+            this.loopIterations++;
+            
+            if (this.loopIterations > this.MAX_LOOP_ITERATIONS) {
+                throw new Error(
+                    `Loop exceeded maximum iterations (${this.MAX_LOOP_ITERATIONS}). ` +
+                    `Possible infinite loop detected. Check your loop condition.`
+                );
+            }
+            
+            // Execute loop body
             for (const statement of node.body) {
                 statement.accept(this);
             }
+            
+            // Re-evaluate condition (important!)
+            conditionResult = node.condition.accept(this);
         }
     }
 

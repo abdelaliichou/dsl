@@ -12,7 +12,7 @@ export const setupConfigClassic = (): UserConfig => {
                 languageId: 'robo-m-language',
                 // code: `// roboMLanguage is running in the web!`,
                 code: `
-let VOID entry1() {
+let VOID entry() {
     setSpeed(550 in MM_PER_SEC)
     var NUMBER count = 0
     loop count LESS 5 {
@@ -46,7 +46,7 @@ let VOID entry2() {
     }
 }
 
-let VOID entry() {
+let VOID entryy() {
     setSpeed(400 in MM_PER_SEC)
     
     var NUMBER side = 30

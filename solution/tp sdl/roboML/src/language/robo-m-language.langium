@@ -89,34 +89,43 @@ FunctionCall returns FunctionCall:
 // EXPRESSIONS (PROPER HIERARCHY WITH PRECEDENCE)
 // ============================================
 
-// Top level - handles both comparison and arithmetic
+// Top level expression entry point
 Expression returns Expression:
     ComparisonExpression
 ;
 
-// Comparison level (lowest precedence, returns boolean)
+// Level 1: Comparison (lowest precedence, returns boolean)
 ComparisonExpression returns Expression:
-    ArithmeticExpression ({ComparisonExpression.left=current} operator=ComparisonOperator right=ArithmeticExpression)?
+    AdditiveExpression ({ComparisonExpression.left=current} 
+    operator=ComparisonOperator right=AdditiveExpression)*
 ;
 
-// Arithmetic level (higher precedence, returns number)
-ArithmeticExpression returns Expression:
-    UnaryExpression ({ArithmeticExpression.left=current} operator=ArithmeticOperator right=UnaryExpression)?
+// Level 2: Additive (PLUS, MINUS) - medium precedence
+AdditiveExpression returns Expression:
+    MultiplicativeExpression ({ArithmeticExpression.left=current} 
+    operator=(ArithmeticOperator_PLUS | ArithmeticOperator_MINUS) 
+    right=MultiplicativeExpression)*
 ;
 
-// Unary level
+// Level 3: Multiplicative (MULTIPLY, DIVIDE, MODULO) - higher precedence
+MultiplicativeExpression returns Expression:
+    UnaryExpression ({ArithmeticExpression.left=current} 
+    operator=(ArithmeticOperator_MULTIPLY | ArithmeticOperator_DIVIDE | ArithmeticOperator_MODULO) 
+    right=UnaryExpression)*
+;
+
+// Level 4: Unary (MINUS, NOT) - highest operator precedence
 UnaryExpression returns Expression:
     {UnaryExpression} operator=UnaryOperator operand=PrimaryExpression
     | PrimaryExpression
 ;
 
-// Primary expressions (highest precedence)
+// Level 5: Primary expressions (atoms and parentheses)
 PrimaryExpression returns Expression:
-    '(' ComparisonExpression ')'
+    '(' Expression ')'
     | NumberLiteral
     | BooleanLiteral  
     | SensorRead
-    | FunctionCall
     | VariableReference
 ;
 
@@ -140,6 +149,20 @@ VariableReference returns VariableReference:
 SensorRead returns SensorRead:
     'getTimestamp' '(' ')' |
     'getDistance' '(' ')' 'in' unit=DistanceUnit
+;
+
+// ============================================
+// OPERATOR SEPARATORS (for proper precedence)
+// ============================================
+
+// Separate additive operators (lower precedence)
+AdditiveOperator returns ArithmeticOperator:
+    ArithmeticOperator_PLUS | ArithmeticOperator_MINUS
+;
+
+// Separate multiplicative operators (higher precedence)
+MultiplicativeOperator returns ArithmeticOperator:
+    ArithmeticOperator_MULTIPLY | ArithmeticOperator_DIVIDE | ArithmeticOperator_MODULO
 ;
 
 // ============================================
