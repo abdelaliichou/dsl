@@ -1832,5 +1832,11 @@ let VOID square() {
 Let's assume that 1mm = 1unit of the scene.
 So if the scene is 1000x1000 wide, we have 1m on 1m
 
+## Compilator
+
+Let's add a new CLI command -> [Custimozing the CLI](https://langium.org/docs/learn/minilogo/customizing_cli/)
+Because we have a validator, let's a a parseAndValidate command.
+
+
 
 
