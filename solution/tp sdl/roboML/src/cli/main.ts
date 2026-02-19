@@ -1,7 +1,6 @@
 import type { Program } from '../language/generated/ast.js';
 import chalk from 'chalk';
 import { Command } from 'commander';
-// import { RoboMLanguageLanguageMetaData } from '../language/generated/module.js';
 import { createRoboMLanguageServices } from '../language/robo-m-language-module.js';
 import { extractAstNode } from './cli-util.js';
 import { generateJavaScript } from './generator.js';
@@ -11,7 +10,8 @@ import * as url from 'node:url';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 // import { RoboMLanguageValidationVisitor } from '../semantics/robo-m-language-visitor.js';
-// import { CompilatorRoboMLanguageVisitor } from '../semantics/compiler.js';
+import { ArduinoCompiler } from '../semantics/compiler.js';
+import { RoboMLanguageLanguageMetaData } from '../language/generated/module.js';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 const packagePath = path.resolve(__dirname, '..', '..', 'package.json');
@@ -24,12 +24,45 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
     console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 };
 
+export const compileAction = async (fileName: string, opts: CompileOptions): Promise<void> => {
+    const services = createRoboMLanguageServices(NodeFileSystem).RoboMLanguage;
+    const program = await extractAstNode<Program>(fileName, services);
+    
+    // Create compiler and generate Arduino code
+    const compiler = new ArduinoCompiler();
+    const arduinoCode = (program as any).accept(compiler);
+    
+    // Determine output file name
+    const data = extractDestinationAndName(fileName, opts.destination);
+    const generatedFilePath = `${path.join(data.destination, data.name)}.ino`;
+    
+    // Ensure directory exists
+    await fs.mkdir(data.destination, { recursive: true });
+    
+    // Write Arduino code
+    await fs.writeFile(generatedFilePath, arduinoCode, 'utf-8');
+    
+    console.log(chalk.green(`✅ Arduino code generated successfully: ${generatedFilePath}`));
+    console.log(chalk.blue(`📝 Open this file in Arduino IDE to upload to your robot.`));
+};
 
+
+function extractDestinationAndName(filePath: string, destination?: string) {
+    const parsed = path.parse(filePath);
+    const finalDestination = destination || path.join(parsed.dir, 'generated');
+    return {
+        destination: finalDestination,
+        name: parsed.name
+    };
+}
 
 export type GenerateOptions = {
     destination?: string;
 }
 
+ export type CompileOptions = {
+        destination?: string;
+}
 
 export const parseAndValidate = async (fileName: string): Promise<void> => {
     const services = createRoboMLanguageServices(NodeFileSystem).RoboMLanguage;
@@ -123,19 +156,20 @@ export default function(): void {
 
     program.version(JSON.parse(packageContent).version);
 
+    const fileExtensions = RoboMLanguageLanguageMetaData.fileExtensions.join(', ');
+    
     program
         .command('parseAndValidate')
         .argument('<file>', 'Source file to parse & validate (ending in ${fileExtensions})')
         .description('Indicates where a program parses & validates successfully, but produces no output code')
-        .action(parseAndValidate) // we'll need to implement this function
+        .action(parseAndValidate)
 
-    //const fileExtensions = RoboMLanguageLanguageMetaData.fileExtensions.join(', ');
-    // program
-    //     .command('generate')
-    //     .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
-    //     .option('-d, --destination <dir>', 'destination directory of generating')
-    //     .description('generates JavaScript code that prints "Hello, {name}!" for each greeting in a source file')
-    //     .action(generateAction);
+    program
+        .command('compile')
+        .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
+        .option('-d, --destination <dir>', 'destination directory of generating')
+        .description('compiles RoboML code to Arduino C')
+        .action(compileAction);
 
     program.parse(process.argv);
 }
