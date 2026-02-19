@@ -51,21 +51,26 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
     
     visitProgram(node: Program): string {
         // Arduino includes
-        this.addLine('#include <Arduino.h>');
+        this.addLine('#include <PinChangeInt.h>');
+        this.addLine('#include <PinChangeIntConfig.h>')
+        this.addLine('#include <EEPROM.h>');
+        this.addLine('#define _NAMIKI_MOTOR //for Namiki 22CL-103501PG80:1');
+        this.addLine('#include <fuzzy_table.h>');
+        this.addLine('#include <PID_Beta6.h>');
         this.addLine('#include <MotorWheel.h>');
         this.addLine('#include <Omni4WD.h>');
-        this.addLine('#include <PID_Beta6.h>');
         this.addLine('');
-        
-        // Robot initialization
-        this.addLine('// Robot initialization');
-        this.addLine('Omni4WD robot;');
-        this.addLine('');
-        
-        // Global variables for speed
-        this.addLine('// Global speed variable (mm/s)');
-        this.addLine('int currentSpeed = 100;');
-        this.addLine('');
+        this.addLine('// Motor and Omni4WD setup');
+        this.addLine('irqISR(irq1, isr1);');
+        this.addLine('MotorWheel wheel1(3, 2, 4, 5, &irq1);');
+        this.addLine('irqISR(irq2, isr2);');
+        this.addLine('MotorWheel wheel2(11, 12, 14, 15, &irq2);');
+        this.addLine('irqISR(irq3, isr3);');
+        this.addLine('MotorWheel wheel3(9, 8, 16, 17, &irq3);');
+        this.addLine('irqISR(irq4, isr4);');
+        this.addLine('MotorWheel wheel4(10, 7, 18, 19, &irq4);');
+        this.addLine('Omni4WD Omni(&wheel1, &wheel2, &wheel3, &wheel4);');
+        this.addLine('int currentSpeed = 0;')
         
         // Register all functions
         for (const func of node.functions) {
@@ -92,11 +97,10 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
         // Generate setup() function
         this.addLine('void setup() {');
         this.increaseIndent();
-        this.addLine('Serial.begin(9600);');
-        this.addLine('robot.PIDEnable(0.31, 0.01, 0.0, 10);');
-        this.addLine('');
-        this.addLine('// Execute entry function');
-        node.entry.accept(this);
+        this.addLine('TCCR1B = TCCR1B & 0xf8 | 0x01; // Pin9,Pin10 PWM 31250Hz');
+        this.addLine('TCCR2B = TCCR2B & 0xf8 | 0x01; // Pin3,Pin11 PWM 31250Hz');
+        this.addLine('  Omni.PIDEnable(0.31, 0.01, 0, 10);');
+        // node.entry.accept(this);
         this.decreaseIndent();
         this.addLine('}');
         this.addLine('');
@@ -104,8 +108,7 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
         // Generate loop() function (empty, execution in setup)
         this.addLine('void loop() {');
         this.increaseIndent();
-        this.addLine('// Program execution happens in setup()');
-        this.addLine('delay(100);');
+        node.entry.accept(this);
         this.decreaseIndent();
         this.addLine('}');
         this.addLine('');
@@ -227,24 +230,24 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
         // Generate movement based on direction
         switch (node.direction) {
             case 'FORWARD':
-                this.addLine(`robot.setCarAdvance(currentSpeed);`);
-                this.addLine(`robot.delayMS(${distanceMM} * 1000 / currentSpeed);`);
-                this.addLine(`robot.setCarStop();`);
+                this.addLine(`Omni.setCarAdvance(currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.setCarStop();`);
                 break;
             case 'BACKWARD':
-                this.addLine(`robot.setCarBackoff(currentSpeed);`);
-                this.addLine(`robot.delayMS(${distanceMM} * 1000 / currentSpeed);`);
-                this.addLine(`robot.setCarStop();`);
+                this.addLine(`Omni.setCarBackoff(currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.setCarStop();`);
                 break;
             case 'LEFT':
-                this.addLine(`robot.setCarLeft(currentSpeed);`);
-                this.addLine(`robot.delayMS(${distanceMM} * 1000 / currentSpeed);`);
-                this.addLine(`robot.setCarStop();`);
+                this.addLine(`Omni.setCarLeft(currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.setCarStop();`);
                 break;
             case 'RIGHT':
-                this.addLine(`robot.setCarRight(currentSpeed);`);
-                this.addLine(`robot.delayMS(${distanceMM} * 1000 / currentSpeed);`);
-                this.addLine(`robot.setCarStop();`);
+                this.addLine(`Omni.setCarRight(currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.setCarStop();`);
                 break;
         }
     }
@@ -258,14 +261,14 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
         
         switch (node.direction) {
             case 'CLOCK':
-                this.addLine(`robot.setCarRotateRight(currentSpeed);`);
-                this.addLine(`robot.delayMS(${timeMs});`);
-                this.addLine(`robot.setCarStop();`);
+                this.addLine(`Omni.setCarRotateRight(currentSpeed);`);
+                this.addLine(`Omni.delayMS(${timeMs});`);
+                this.addLine(`Omni.setCarStop();`);
                 break;
             case 'COUNTERCLOCK':
-                this.addLine(`robot.setCarRotateLeft(currentSpeed);`);
-                this.addLine(`robot.delayMS(${timeMs});`);
-                this.addLine(`robot.setCarStop();`);
+                this.addLine(`Omni.setCarRotateLeft(currentSpeed);`);
+                this.addLine(`Omni.delayMS(${timeMs});`);
+                this.addLine(`Omni.setCarStop();`);
                 break;
         }
     }
@@ -332,7 +335,7 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
                 return 'millis()';
             case 'DISTANCE':
                 // Assuming ultrasonic sensor
-                return 'robot.getDistance()';
+                return 'Omni.getDistance()';
             default:
                 return '0';
         }
