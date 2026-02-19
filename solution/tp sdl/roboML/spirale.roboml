@@ -1,0 +1,16 @@
+let VOID spiral() {
+    var NUMBER step = 20      
+    var NUMBER count = 0
+    loop count LESS 4 {  
+        FORWARD step in CM
+        CLOCK 90
+        step = step PLUS 20
+        count = count PLUS 1
+    }
+}
+
+let VOID entry() {
+    setSpeed(40 in MM_PER_SEC)
+    spiral()
+    setSpeed(0 in MM_PER_SEC)
+}

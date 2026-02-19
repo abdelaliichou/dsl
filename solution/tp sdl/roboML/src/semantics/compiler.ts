@@ -231,22 +231,22 @@ export class ArduinoCompiler  implements RoboMLanguageVisitor {
         switch (node.direction) {
             case 'FORWARD':
                 this.addLine(`Omni.setCarAdvance(currentSpeed);`);
-                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 100 / currentSpeed);`);
                 this.addLine(`Omni.setCarStop();`);
                 break;
             case 'BACKWARD':
                 this.addLine(`Omni.setCarBackoff(currentSpeed);`);
-                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 100 / currentSpeed);`);
                 this.addLine(`Omni.setCarStop();`);
                 break;
             case 'LEFT':
                 this.addLine(`Omni.setCarLeft(currentSpeed);`);
-                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 100 / currentSpeed);`);
                 this.addLine(`Omni.setCarStop();`);
                 break;
             case 'RIGHT':
                 this.addLine(`Omni.setCarRight(currentSpeed);`);
-                this.addLine(`Omni.delayMS(${distanceMM} * 1000 / currentSpeed);`);
+                this.addLine(`Omni.delayMS(${distanceMM} * 100 / currentSpeed);`);
                 this.addLine(`Omni.setCarStop();`);
                 break;
         }
